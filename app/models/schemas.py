@@ -40,7 +40,7 @@ class CompsRequest(BaseModel):
         return self
 
 
-class CompProperty(BaseModel):
+class PropertyListing(BaseModel):
     address: str
     city: str
     state: str
@@ -67,9 +67,9 @@ class InputSummary(BaseModel):
     days_old: Optional[str] = None
 
 
-class CompsResponse(BaseModel):
+class ListingResponse(BaseModel):
     input: InputSummary
-    comps: List[CompProperty]
+    listings: List[PropertyListing]
 
 
 class ErrorResponse(BaseModel):

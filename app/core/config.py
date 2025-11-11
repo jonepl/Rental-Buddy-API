@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,8 +7,9 @@ class Settings(BaseSettings):
     rentcast_api_key: str
 
     # API Endpoints
-    rentcast_url: str = "https://api.rentcast.io/v1/listings/rental/long-term"
-    opencage_url: str = "https://api.opencagedata.com/geocode/v1/json"
+    rentcast_rental_url: str
+    rentcast_sale_url: str
+    opencage_url: str
 
     # Configuration
     rentcast_radius_miles_default: float = 5.0

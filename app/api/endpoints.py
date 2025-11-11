@@ -4,11 +4,11 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 from app.core.constants import HttpStatus
-from app.models.schemas import (CompsRequest, CompsResponse, ErrorCode,
-                                ErrorResponse, InputSummary)
+from app.models.schemas import (CompsRequest, ErrorCode, ErrorResponse,
+                                InputSummary, ListingResponse)
 from app.services.cache_service import CacheService
 from app.services.geocoding_service import GeocodingService
-from app.services.rental_service import RentalService
+from app.services.property_service import PropertyService
 from app.utils.validators import is_valid_us_address, validate_coordinates
 
 logger = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ router = APIRouter()
 
 # Service instances
 geocoding_service = GeocodingService()
-rental_service = RentalService()
+property_service = PropertyService()
 cache_service = CacheService()
 
 
-@router.post("/comps", response_model=CompsResponse)
-async def get_rental_comps(request: CompsRequest):
+@router.post("/comps", response_model=ListingResponse)
+async def get_rental_data(request: CompsRequest):
     """
     Get rental comparables for a given property
 
@@ -57,7 +57,7 @@ async def get_rental_comps(request: CompsRequest):
             return cached_result
 
         # Fetch rental comps
-        comps = await rental_service.get_rental_comps(
+        listings = await property_service.get_rental_data(
             latitude=latitude,
             longitude=longitude,
             bedrooms=request.bedrooms,
@@ -67,13 +67,13 @@ async def get_rental_comps(request: CompsRequest):
         )
 
         # If no results from real API or error occurred, try mock data
-        if not comps:
+        if not listings:
             logger.warning("No rental comps found, using mock data")
-            comps = await rental_service.get_mock_comps(
+            listings = await property_service.get_mock_comps(
                 latitude, longitude, request.bedrooms, request.bathrooms
             )
 
-            if not comps:
+            if not listings:
                 raise HTTPException(
                     status_code=HttpStatus.HTTP_404_NOT_FOUND,
                     detail=ErrorResponse(
@@ -83,7 +83,7 @@ async def get_rental_comps(request: CompsRequest):
                 )
 
         # Build response
-        response = CompsResponse(
+        response = ListingResponse(
             input=InputSummary(
                 resolved_address=resolved_address,
                 latitude=latitude,
@@ -93,7 +93,7 @@ async def get_rental_comps(request: CompsRequest):
                 radius_miles=request.radius_miles,
                 days_old=request.days_old,
             ),
-            comps=comps,
+            listings=listings,
         )
 
         # Cache the result
@@ -112,7 +112,7 @@ async def get_rental_comps(request: CompsRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error in get_rental_comps: {e}")
+        logger.error(f"Unexpected error in get_rental_data: {e}")
         raise HTTPException(
             status_code=HttpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponse(

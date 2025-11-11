@@ -12,3 +12,6 @@ venv/
 
 # Environment variables
 .env
+
+# Development
+remaining_work.md

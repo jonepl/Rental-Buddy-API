@@ -180,7 +180,7 @@ rental-buddy/
 │   │   └── schemas.py           # Pydantic models
 │   ├── services/
 │   │   ├── geocoding_service.py # OpenCage integration
-│   │   ├── rental_service.py    # RentCast integration
+│   │   ├── property_service.py    # RentCast integration
 │   │   └── cache_service.py     # Caching layer
 │   ├── utils/
 │   │   ├── distance.py          # Haversine calculations

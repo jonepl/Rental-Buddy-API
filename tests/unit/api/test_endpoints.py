@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.models.schemas import CompProperty, ErrorCode
+from app.models.schemas import ErrorCode, PropertyListing
 
 client = TestClient(app)
 
@@ -34,7 +34,7 @@ class TestCompsEndpoint:
             "app.api.endpoints._resolve_location", new_callable=AsyncMock
         )
         self.p_cache = patch("app.api.endpoints.cache_service")
-        self.p_rental = patch("app.api.endpoints.rental_service")
+        self.p_rental = patch("app.api.endpoints.property_service")
 
         self.m_resolve = self.p_resolve.start()
         self.m_cache = self.p_cache.start()
@@ -43,7 +43,7 @@ class TestCompsEndpoint:
         # defaults
         self.m_resolve.return_value = (30.2672, -97.7431, "123 Main St, Austin, TX")
         self.m_cache.get.return_value = None
-        comp = CompProperty(
+        comp = PropertyListing(
             address="456 Oak Ave, Austin, TX 78702",
             city="Austin",
             state="TX",
@@ -57,7 +57,7 @@ class TestCompsEndpoint:
             square_footage=1025,
             distance_miles=1.4,
         )
-        self.m_rental.get_rental_comps = AsyncMock(return_value=([comp]))
+        self.m_rental.get_rental_data = AsyncMock(return_value=([comp]))
         self.m_rental.get_mock_comps = AsyncMock(return_value=[comp])
 
         yield
@@ -73,9 +73,9 @@ class TestCompsEndpoint:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert "input" in data and "comps" in data
-        assert len(data["comps"]) == 1
-        assert data["comps"][0]["address"].startswith("456 Oak Ave")
+        assert "input" in data and "listings" in data
+        assert len(data["listings"]) == 1
+        assert data["listings"][0]["address"].startswith("456 Oak Ave")
 
     def test_success_returns_comps_with_lat_lng(self):
         req = {
@@ -88,10 +88,10 @@ class TestCompsEndpoint:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert "input" in data and "comps" in data
-        assert len(data["comps"]) == 1
-        assert data["comps"][0]["latitude"] == 30.263412
-        assert data["comps"][0]["longitude"] == -97.720118
+        assert "input" in data and "listings" in data
+        assert len(data["listings"]) == 1
+        assert data["listings"][0]["latitude"] == 30.263412
+        assert data["listings"][0]["longitude"] == -97.720118
 
     def test_cache_hit_returns_cached_payload(self):
         cached = {
@@ -104,7 +104,7 @@ class TestCompsEndpoint:
                 "longitude": -97.7431,
                 "radius_miles": 5.0,
             },
-            "comps": [
+            "listings": [
                 {
                     "address": "789 Pine St, Austin, TX 78703",
                     "city": "Austin",
@@ -122,7 +122,12 @@ class TestCompsEndpoint:
             ],
         }
         self.m_cache.get.return_value = cached
-        req = {"address": "123 Main St", "latitude": 30.2672, "longitude": -97.7431, "radius_miles": 5.0}
+        req = {
+            "address": "123 Main St",
+            "latitude": 30.2672,
+            "longitude": -97.7431,
+            "radius_miles": 5.0,
+        }
 
         resp = client.post("/api/v1/comps", json=req)
 
@@ -140,18 +145,28 @@ class TestCompsEndpoint:
         assert body["detail"]["code"] == ErrorCode.INVALID_INPUT
 
     def test_rental_error_falls_back_to_mock(self):
-        self.m_rental.get_rental_comps = AsyncMock(return_value=([]))
-        req = {"address": "123 Main St", "bedrooms": 2, "bathrooms": 1.5, "radius_miles": 5.0}
+        self.m_rental.get_rental_data = AsyncMock(return_value=([]))
+        req = {
+            "address": "123 Main St",
+            "bedrooms": 2,
+            "bathrooms": 1.5,
+            "radius_miles": 5.0,
+        }
 
         resp = client.post("/api/v1/comps", json=req)
 
         assert resp.status_code == 200
-        assert len(resp.json()["comps"]) == 1
+        assert len(resp.json()["listings"]) == 1
 
     def test_no_results_anywhere_returns_404(self):
-        self.m_rental.get_rental_comps = AsyncMock(return_value=([]))
+        self.m_rental.get_rental_data = AsyncMock(return_value=([]))
         self.m_rental.get_mock_comps = AsyncMock(return_value=[])
-        req = {"address": "123 Main St", "bedrooms": 2, "bathrooms": 1.5, "radius_miles": 5.0}
+        req = {
+            "address": "123 Main St",
+            "bedrooms": 2,
+            "bathrooms": 1.5,
+            "radius_miles": 5.0,
+        }
 
         resp = client.post("/api/v1/comps", json=req)
 
@@ -160,7 +175,12 @@ class TestCompsEndpoint:
         assert body["detail"]["code"] == ErrorCode.NO_RESULTS
 
     def test_validation_error_422_for_bad_bathrooms(self):
-        req = {"address": "123 Main St", "bedrooms": 2, "bathrooms": 1.25, "radius_miles": 5.0}
+        req = {
+            "address": "123 Main St",
+            "bedrooms": 2,
+            "bathrooms": 1.25,
+            "radius_miles": 5.0,
+        }
 
         resp = client.post("/api/v1/comps", json=req)
 

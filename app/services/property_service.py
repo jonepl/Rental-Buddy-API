@@ -4,20 +4,21 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from app.core.config import settings
-from app.models.schemas import CompProperty
+from app.models.schemas import PropertyListing
 from app.utils.distance import haversine_distance
 
 logger = logging.getLogger(__name__)
 
 
-class RentalService:
+class PropertyService:
     def __init__(self):
         self.api_key = settings.rentcast_api_key
-        self.base_url = settings.rentcast_url
+        self.rental_endpoint = settings.rentcast_rental_url
+        self.sale_endpoint = settings.rentcast_sale_url
         self.timeout = settings.request_timeout_seconds
         self.request_cap = settings.rentcast_request_cap
 
-    async def get_rental_comps(
+    async def get_rental_data(
         self,
         latitude: float,
         longitude: float,
@@ -25,12 +26,12 @@ class RentalService:
         bathrooms: Optional[float] = None,
         radius_miles: float = 5.0,
         days_old: Optional[str] = None,
-    ) -> List[CompProperty]:
+    ) -> List[PropertyListing]:
         """
         Fetch rental listings from RentCast API and return filtered/sorted comps
 
         Returns:
-            List of CompProperty objects, sorted by distance then price then sqft
+            List of PropertyListing objects, sorted by distance then price then sqft
         """
         params = {
             "latitude": latitude,
@@ -57,7 +58,7 @@ class RentalService:
                     + (f"/{bathrooms}ba" if bathrooms is not None else "")
                 )
                 response = await client.get(
-                    self.base_url, params=params, headers=headers
+                    self.rental_endpoint, params=params, headers=headers
                 )
                 response.raise_for_status()
 
@@ -97,6 +98,86 @@ class RentalService:
             logger.error(f"Unexpected error fetching rentals: {e}")
             return []
 
+    async def get_sale_data(
+        self,
+        latitude: float,
+        longitude: float,
+        bedrooms: Optional[int] = None,
+        bathrooms: Optional[float] = None,
+        radius_miles: float = 5.0,
+        days_old: Optional[str] = None,
+    ) -> List[PropertyListing]:
+        """
+        Fetch sale listings from RentCast API and return filtered/sorted comps
+
+        Returns:
+            List of PropertyListing objects, sorted by distance then price then sqft
+        """
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "radius": radius_miles or settings.rentcast_radius_miles_default,
+            "daysOld": days_old or settings.rentcast_days_old_default,
+            "limit": min(50, self.request_cap),
+        }
+        # Only include bed/bath filters if provided
+        if bedrooms is not None:
+            params["bedrooms"] = bedrooms
+        if bathrooms is not None:
+            params["bathrooms"] = bathrooms
+        if days_old is not None:
+            params["daysOld"] = days_old
+
+        headers = {"X-Api-Key": self.api_key, "accept": "application/json"}
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                logger.info(
+                    f"Fetching sales for {latitude}, {longitude}"
+                    + (f" - {bedrooms}br" if bedrooms is not None else "")
+                    + (f"/{bathrooms}ba" if bathrooms is not None else "")
+                )
+                response = await client.get(
+                    self.sale_endpoint, params=params, headers=headers
+                )
+                response.raise_for_status()
+
+                listings = response.json()
+                # listings = data.get("listings", [])
+
+                # Process and filter listings
+                comps = []
+                seen_addresses = set()
+
+                for listing in listings:
+                    comp = self._process_listing(
+                        listing, latitude, longitude, bedrooms, bathrooms
+                    )
+                    if comp and comp.address.lower() not in seen_addresses:
+                        comps.append(comp)
+                        seen_addresses.add(comp.address.lower())
+
+                # Sort by distance, then price (asc), then sqft (desc)
+                comps.sort(
+                    key=lambda x: (x.distance_miles, x.price, -(x.square_footage or 0))
+                )
+
+                # Return up to configured max results
+                return comps[: settings.max_results]
+
+        except httpx.TimeoutException:
+            logger.error("Timeout fetching sale data")
+            return []
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 429:
+                logger.error("Rate limited by rental service")
+                return []
+            logger.error(f"HTTP error fetching sales: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Unexpected error fetching sales: {e}")
+            return []
+
     def _process_listing(
         self,
         listing: Dict[Any, Any],
@@ -104,9 +185,9 @@ class RentalService:
         subject_lng: float,
         target_bedrooms: Optional[int],
         target_bathrooms: Optional[float],
-    ) -> Optional[CompProperty]:
+    ) -> Optional[PropertyListing]:
         """
-        Process a single listing from RentCast API into a CompProperty
+        Process a single listing from RentCast API into a PropertyListing
 
         Returns None if listing should be filtered out
         """
@@ -141,7 +222,7 @@ class RentalService:
             # Calculate distance
             distance = haversine_distance(subject_lat, subject_lng, latitude, longitude)
 
-            return CompProperty(
+            return PropertyListing(
                 address=address,
                 city=city,
                 state=state,
@@ -161,8 +242,12 @@ class RentalService:
             return None
 
     async def get_mock_comps(
-        self, latitude: float, longitude: float, bedrooms: Optional[int], bathrooms: Optional[float]
-    ) -> List[CompProperty]:
+        self,
+        latitude: float,
+        longitude: float,
+        bedrooms: Optional[int],
+        bathrooms: Optional[float],
+    ) -> List[PropertyListing]:
         """
         Return mock rental comps for testing when real API is unavailable
         """
@@ -211,4 +296,4 @@ class RentalService:
             },
         ]
 
-        return [CompProperty(**listing) for listing in mock_listings]
+        return [PropertyListing(**listing) for listing in mock_listings]

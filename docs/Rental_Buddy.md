@@ -145,7 +145,7 @@ We will build a Python-based API that returns comparable rental listings near a 
 - uvicorn
 - **Services:**  
   - `maps_service.py` → geocoding (OpenCage API)   
-  - `rental_service.py` → rental data fetch (RentCast Rental API or mock)  
+  - `property_service.py` → rental data fetch (RentCast Rental API or mock)  
 
 
 
@@ -159,7 +159,7 @@ We will build a Python-based API that returns comparable rental listings near a 
       config.py
     services/
       maps_service.py
-      rental_service.py
+      property_service.py
   /tests
     e2e/
       test_comps_endpoint.py
@@ -169,7 +169,7 @@ We will build a Python-based API that returns comparable rental listings near a 
         test_api.py
       services/
         test_maps_service.py
-        test_rental_service.py
+        test_property_service.py
   .env
   requirements.txt
   Dockerfile
