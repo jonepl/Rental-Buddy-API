@@ -98,6 +98,50 @@ We will build a Python-based API that returns comparable rental listings near a 
 
 ---
 
+## 3b. Updated API Design (Refactor)
+
+This refactor introduces unified listing endpoints for rentals and sales with a normalized DTO and a pure-analytics `/comps` endpoint.
+
+- **Endpoints**
+  - `POST /api/v1/rentals` → returns normalized rental listings in a common envelope
+  - `POST /api/v1/sales` → returns normalized sale listings in a common envelope
+  - `POST /api/v1/comps` → analytics only; accepts listing `ids` from last search or inline normalized `listings`
+
+- **Shared Request Contract (rentals/sales)**
+  - Address XOR coordinates. If both are provided, address wins.
+  - Fields: `address`, `latitude`, `longitude`, `radius_miles`, `beds`, `baths`, `min_price`, `max_price`, `min_sqft`, `max_sqft`, `days_old`, `limit`, `offset`, `sort: { by, dir }`
+
+- **Response Envelope**
+```json
+{
+  "input": { "center": {"lat": 26.0052, "lon": -80.2128}, "radius_miles": 5.0, "filters": {"beds": 3, "baths": 2.0, "days_old": "*:270"} },
+  "summary": { "returned": 50, "count": null, "page": { "limit": 50, "offset": 0, "next_offset": 50 } },
+  "listings": [ /* normalized listing */ ],
+  "meta": { "category": "rental|sale", "request_id": "rb_...", "duration_ms": 0, "cache": "hit|miss|partial", "provider_calls": 0 }
+}
+```
+
+- **Normalized Listing DTO (both categories)**
+```
+{
+  "id": "prov:rentcast:abc123",
+  "category": "rental|sale",
+  "status": "Active",
+  "address": { "formatted": "123 Main St, Austin, TX 78701", "line1": "123 Main St", "line2": null, "city": "Austin", "state": "TX", "zip": "78701", "county": "Travis", "county_fips": "48453", "lat": 30.2672, "lon": -97.7431 },
+  "facts": { "beds": 3, "baths": 2.0, "sqft": 1400, "year_built": 1984, "property_type": "Single Family Home" },
+  "pricing": { "list_price": 2400, "currency": "USD", "period": "monthly|total" },
+  "dates": { "listed": "2025-11-01T00:00:00Z", "removed": null, "last_seen": "2025-11-05T14:12:33Z" },
+  "hoa": { "monthly": 0 },
+  "distance_miles": 1.2,
+  "provider": { "name": "rentcast" }
+}
+```
+
+- **`/comps` (analytics)**
+  - Pure CPU. No provider calls. Accepts `ids` (resolved from server cache of last search) or inline `listings`.
+  - Computes metrics: price_per_sqft, rent_per_sqft, rent_to_price, gross_yield, cap_rate, grm. Returns `null` when inputs missing.
+
+
 ## 4. External Dependencies
 - **OpenCage API Geocoding** – Convert input address → latitude/longitude  
 - **RentCast Rental API** – Query rental listings by lat/long, filter by bed/bath, return details  
@@ -139,27 +183,47 @@ We will build a Python-based API that returns comparable rental listings near a 
 
 ## 7. Plan & Project Structure
 ### Proposed Architecture
-- **API Layer:** FastAPI for `/comps` endpoint
-- Pydantic
+- **API Layer:** FastAPI for `/rentals`, `/sales`, and `/comps` endpoints
+- Pydantic v2
 - httpx
 - uvicorn
+- **Domain:**  
+  - `app/domain/dto.py` → normalized DTOs (requests, envelopes, listing, comps)  
+  - `app/domain/analytics.py` → pure analytics (metrics, percentiles, ranks scaffold)  
 - **Services:**  
-  - `maps_service.py` → geocoding (OpenCage API)   
-  - `property_service.py` → rental data fetch (RentCast Rental API or mock)  
-
-
+  - `app/services/geocoding_service.py` → geocoding (OpenCage API)   
+  - `app/services/property_service.py` → provider access (RentCast)  
+  - `app/services/providers/rentcast.py` → adapter mapping provider → normalized listing  
+  - `app/services/result_cache.py` → short-lived normalized results cache  
+- **Core:**  
+  - `app/core/pagination.py` → pagination helpers  
+  - `app/core/telemetry.py` → request_id and timings  
+  - `app/core/errors.py` → structured error helpers  
 
 ### Directory Layout
 ```
-/.
+./
   /app
     main.py
-    api.py
-    config/
+    api/
+      routes_rentals.py
+      routes_sales.py
+      routes_comps.py
+      endpoints.py              # legacy health/cache (temporarily mounted)
+    core/
       config.py
+      pagination.py
+      telemetry.py
+      errors.py
+    domain/
+      dto.py
+      analytics.py
     services/
-      maps_service.py
+      geocoding_service.py
       property_service.py
+      result_cache.py
+      providers/
+        rentcast.py
   /tests
     e2e/
       test_comps_endpoint.py
@@ -178,22 +242,48 @@ We will build a Python-based API that returns comparable rental listings near a 
 ---
 
 ## 8. Success Criteria
-- Returns matching comps for valid input  
-- Error messages follow JSON schema  
-- Consistent output key names  
+- `/rentals` and `/sales` return normalized envelopes with `listings` and `distance_miles`  
+- `/comps` computes requested derived metrics without provider calls  
+- Pagination serves from normalized cache for subsequent pages (no extra provider calls)  
+- Consistent JSON snake_case, `null` for unknowns, ISO-8601 UTC timestamps  
+- Error envelopes follow structured schema  
 - Unit, integration & end-to-end tests passing  
 
 ---
 
 ## 9. Launch Readiness
 - ✅ Code compiles without errors  
-- ✅ `/comps` endpoint responds with real + mock data  
+- ✅ `/rentals` & `/sales` endpoints respond with normalized envelopes  
+- ✅ `/comps` endpoint returns analytics for inline items (IDs via cache supported)  
 - ✅ Unit & integration tests green  
 - ✅ End-to-end tests green  
 - ✅ OpenAPI/Swagger documentation generated  
 - ✅ Ready for Docker deployment
 - ✅ Swagger JSON validated
 - ✅ Secrets scan passes (no keys in repo).
+
+---
+
+## 11. Future Enhancements
+
+- **Pagination from cache across requests**  
+  - Surface and accept a `request_id` to page the previously cached normalized result set without re-calling providers.
+- **Meta accuracy and telemetry**  
+  - Propagate `request_id`, compute precise `duration_ms`, and mark `cache` as hit/miss/partial with accurate `provider_calls`.
+- **Group summaries and ranking in `/comps`**  
+  - Add percentiles and ranks (e.g., P50/P90, pct ranks), with optional `group_by` aggregations.
+- **Timestamp normalization**  
+  - Ensure all provider timestamps are normalized to ISO-8601 with `Z` suffix.
+- **Dedupe refinements**  
+  - Improve proximity dedupe threshold, tie-break by `dates.last_seen` (keep newest).
+- **Health and cache endpoints**  
+  - Move `/health` and `/cache/stats` to a small dedicated router; remove legacy router.
+- **Provider adapter coverage**  
+  - Map any remaining RentCast fields and ignore unknowns safely.
+- **Validation**  
+  - Harden numeric coercion and explicit rejects for non-numeric placeholders (e.g., "N/A").
+- **Testing**  
+  - Add DTO validation tests (address XOR lat/lon; baths step; bounds), analytics golden tests, provider mapping tests, and e2e search→comps flow.
 
 ---
 

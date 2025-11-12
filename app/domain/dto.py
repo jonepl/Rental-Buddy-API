@@ -1,0 +1,209 @@
+from __future__ import annotations
+
+from enum import Enum
+from typing import List, Optional, Literal, Dict, Any
+
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+
+
+class SortBy(str, Enum):
+    distance = "distance"
+    price = "price"
+    beds = "beds"
+    baths = "baths"
+    sqft = "sqft"
+
+
+class SortSpec(BaseModel):
+    by: SortBy = SortBy.distance
+    dir: Literal["asc", "desc"] = "asc"
+
+
+class SearchRequest(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    radius_miles: float = Field(default=5.0, gt=0)
+    beds: Optional[int] = Field(default=None, ge=0)
+    baths: Optional[float] = Field(default=None, gt=0)
+    min_price: Optional[int] = Field(default=None, ge=0)
+    max_price: Optional[int] = Field(default=None, ge=0)
+    min_sqft: Optional[int] = Field(default=None, ge=0)
+    max_sqft: Optional[int] = Field(default=None, ge=0)
+    days_old: Optional[str] = Field(default=None)
+    limit: int = Field(default=50, ge=1, le=100)
+    offset: int = Field(default=0, ge=0)
+    sort: SortSpec = Field(default_factory=SortSpec)
+
+    @field_validator("baths")
+    @classmethod
+    def validate_baths(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v * 2) % 1 != 0:
+            raise ValueError("baths must be in 0.5 increments")
+        return v
+
+    @model_validator(mode="after")
+    def validate_location_input(self) -> "SearchRequest":
+        # address XOR (lat & lon). If both, address wins but it's still valid
+        if not self.address and (self.latitude is None or self.longitude is None):
+            raise ValueError("Must provide either address or latitude & longitude")
+        return self
+
+
+class Center(BaseModel):
+    lat: float
+    lon: float
+
+
+class InputFilters(BaseModel):
+    beds: Optional[int] = None
+    baths: Optional[float] = None
+    days_old: Optional[str] = None
+
+
+class PageSpec(BaseModel):
+    limit: int
+    offset: int
+    next_offset: Optional[int] = None
+
+
+class SearchInputSummary(BaseModel):
+    center: Center
+    radius_miles: float
+    filters: InputFilters
+
+
+class ProviderInfo(BaseModel):
+    name: str
+
+
+class Address(BaseModel):
+    formatted: Optional[str] = None
+    line1: Optional[str] = None
+    line2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    county: Optional[str] = None
+    county_fips: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+
+
+class Facts(BaseModel):
+    beds: Optional[int] = None
+    baths: Optional[float] = None
+    sqft: Optional[int] = None
+    year_built: Optional[int] = None
+    property_type: Optional[str] = None
+
+
+class Pricing(BaseModel):
+    list_price: Optional[float] = None
+    currency: str = "USD"
+    period: Optional[Literal["monthly", "total"]] = None
+
+
+class Dates(BaseModel):
+    listed: Optional[str] = None
+    removed: Optional[str] = None
+    last_seen: Optional[str] = None
+
+
+class HOA(BaseModel):
+    monthly: Optional[float] = None
+
+
+class NormalizedListing(BaseModel):
+    id: str
+    category: Literal["rental", "sale"]
+    status: Optional[str] = None
+    address: Address
+    facts: Facts
+    pricing: Pricing
+    dates: Dates = Field(default_factory=Dates)
+    hoa: HOA = Field(default_factory=HOA)
+    distance_miles: Optional[float] = None
+    provider: ProviderInfo = Field(default_factory=lambda: ProviderInfo(name="rentcast"))
+
+
+class EnvelopeSummary(BaseModel):
+    returned: int
+    count: Optional[int] = None
+    page: PageSpec
+
+
+class EnvelopeMeta(BaseModel):
+    category: Literal["rental", "sale"]
+    request_id: str
+    duration_ms: int
+    cache: Literal["hit", "miss", "partial"]
+    provider_calls: int
+
+
+class ListingsEnvelope(BaseModel):
+    input: SearchInputSummary
+    summary: EnvelopeSummary
+    listings: List[NormalizedListing]
+    meta: EnvelopeMeta
+
+
+class ErrorDetail(BaseModel):
+    code: str
+    message: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ErrorEnvelope(BaseModel):
+    error: ErrorDetail
+
+
+# COMPS
+class CompsAssumptions(BaseModel):
+    vacancy_pct: Optional[float] = 5
+    maintenance_pct_of_rent: Optional[float] = 8
+    mgmt_pct_of_rent: Optional[float] = 8
+    taxes_annual: Optional[float] = None
+    insurance_annual: Optional[float] = None
+    hoa_monthly: Optional[float] = None
+    purchase_price: Optional[float] = None
+    market_rent: Optional[float] = None
+
+
+class CompsRequestByIds(BaseModel):
+    ids: List[str]
+    assumptions: Optional[CompsAssumptions] = None
+    metrics: List[str]
+    group_by: Optional[List[str]] = None
+    limit: int = 100
+
+
+class CompsRequestInline(BaseModel):
+    listings: List[NormalizedListing]
+    assumptions: Optional[CompsAssumptions] = None
+    metrics: List[str]
+    group_by: Optional[List[str]] = None
+    limit: int = 100
+
+
+class CompRow(BaseModel):
+    id: str
+    address: Optional[str] = None
+    facts: Dict[str, Any]
+    base: Dict[str, Any]
+    derived: Dict[str, Optional[float]]
+    ranks: Dict[str, Optional[float]] = Field(default_factory=dict)
+
+
+class CompsSummary(BaseModel):
+    by_group: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    global_: Dict[str, Any] = Field(default_factory=dict, alias="global")
+
+
+class CompsResponse(BaseModel):
+    input: Dict[str, Any]
+    rows: List[CompRow]
+    summary: CompsSummary
+    meta: Dict[str, Any]

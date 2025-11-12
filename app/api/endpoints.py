@@ -21,7 +21,7 @@ property_service = PropertyService()
 cache_service = CacheService()
 
 
-@router.post("/comps", response_model=ListingResponse)
+@router.post("/rentals", response_model=ListingResponse)
 async def get_rental_data(request: CompsRequest):
     """
     Get rental comparables for a given property
@@ -120,6 +120,11 @@ async def get_rental_data(request: CompsRequest):
             ).model_dump(),
         )
 
+
+@router.post("/sales", response_model=ListingResponse)
+async def get_sales_data(request: CompsRequest):
+    pass
+    
 
 async def _resolve_location(
     request: CompsRequest,

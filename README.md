@@ -58,9 +58,9 @@ The API will be available at `http://localhost:8000`
 
 ## API Usage
 
-### Get Rental Comps
+### Get Rental and Sales Data with Comparables Analytics
 
-**POST** `/api/v1/comps`
+**POST** `/api/v1/rentals`
 
 #### Request Body
 
@@ -98,8 +98,9 @@ Or use coordinates directly:
     "radius_miles": 5.0,
     "days_old": "*:270"
   },
-  "comps": [
+  "listings": [
     {
+      "id": "123",
       "address": "456 Oak Ave, Fort Lauderdale, FL 33301",
       "price": 2400,
       "bedrooms": 3,

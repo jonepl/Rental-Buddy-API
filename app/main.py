@@ -4,8 +4,11 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.endpoints import router
 from app.core.config import settings
+from app.api.routes_rentals import router as rentals_router
+from app.api.routes_sales import router as sales_router
+from app.api.routes_comps import router as comps_router
+from app.api.endpoints import router as legacy_router
 
 # Configure logging
 logging.basicConfig(
@@ -34,7 +37,10 @@ app.add_middleware(
 )
 
 # Include API routes
-app.include_router(router, prefix="/api/v1")
+app.include_router(rentals_router, prefix="/api/v1")
+app.include_router(sales_router, prefix="/api/v1")
+app.include_router(comps_router, prefix="/api/v1")
+app.include_router(legacy_router, prefix="/api/v1")
 
 
 # Root endpoint

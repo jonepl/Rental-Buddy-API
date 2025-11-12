@@ -69,7 +69,7 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -84,7 +84,7 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 200
         data = resp.json()
@@ -129,7 +129,7 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 200
         assert resp.json() == cached
@@ -138,7 +138,7 @@ class TestCompsEndpoint:
         self.m_resolve.return_value = (None, None, "Invalid coordinates provided")
         req = {"address": "bad", "bedrooms": 2, "bathrooms": 1.5, "radius_miles": 5.0}
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 400
         body: dict = resp.json()
@@ -153,7 +153,7 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 200
         assert len(resp.json()["listings"]) == 1
@@ -168,7 +168,7 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 404
         body = resp.json()
@@ -182,6 +182,6 @@ class TestCompsEndpoint:
             "radius_miles": 5.0,
         }
 
-        resp = client.post("/api/v1/comps", json=req)
+        resp = client.post("/api/v1/rentals", json=req)
 
         assert resp.status_code == 422
