@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 geocoder = GeocodingService()
+property_service = PropertyService()
 
 
 @router.post("/rentals", response_model=ListingsEnvelope)
@@ -35,6 +36,7 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
     rid = request_id()
     start = __import__("time").perf_counter()
 
+    # TODO: This code is similar to sales; consider refactoring
     # Resolve center (address XOR lat/lon; if both, address wins)
     lat: Optional[float] = None
     lon: Optional[float] = None
@@ -49,8 +51,7 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
         if lat is None or lon is None:
             raise HTTPException(status_code=400, detail={"error": {"code": "400_INVALID_INPUT", "message": "Invalid location", "details": {}}})
 
-    service = PropertyService()
-    raw_listings = await service.get_rental_data(
+    raw_listings = await property_service.get_rental_data(
         latitude=lat,
         longitude=lon,
         bedrooms=req.beds,
@@ -105,6 +106,7 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
             if not duplicate:
                 deduped.append(n)
 
+    # This code is similar to sales; consider refactoring
     # sort
     reverse = (req.sort.dir == "desc")
     if req.sort.by == "distance":

@@ -114,10 +114,35 @@ This refactor introduces unified listing endpoints for rentals and sales with a 
 - **Response Envelope**
 ```json
 {
-  "input": { "center": {"lat": 26.0052, "lon": -80.2128}, "radius_miles": 5.0, "filters": {"beds": 3, "baths": 2.0, "days_old": "*:270"} },
-  "summary": { "returned": 50, "count": null, "page": { "limit": 50, "offset": 0, "next_offset": 50 } },
+  "input": {
+    "center": {
+      "lat": 26.0052,
+      "lon": -80.2128
+    },
+    "radius_miles": 5,
+    "filters": {
+      "beds": 3,
+      "baths": 2,
+      "days_old": "*:270"
+    }
+  },
+  "summary": {
+    "returned": 50,
+    "count": null,
+    "page": {
+      "limit": 50,
+      "offset": 0,
+      "next_offset": 50
+    }
+  },
   "listings": [ /* normalized listing */ ],
-  "meta": { "category": "rental|sale", "request_id": "rb_...", "duration_ms": 0, "cache": "hit|miss|partial", "provider_calls": 0 }
+  "meta": {
+    "category": "rental|sale",
+    "request_id": "rb_...",
+    "duration_ms": 0,
+    "cache": "hit|miss|partial",
+    "provider_calls": 0
+  }
 }
 ```
 
@@ -127,13 +152,42 @@ This refactor introduces unified listing endpoints for rentals and sales with a 
   "id": "prov:rentcast:abc123",
   "category": "rental|sale",
   "status": "Active",
-  "address": { "formatted": "123 Main St, Austin, TX 78701", "line1": "123 Main St", "line2": null, "city": "Austin", "state": "TX", "zip": "78701", "county": "Travis", "county_fips": "48453", "lat": 30.2672, "lon": -97.7431 },
-  "facts": { "beds": 3, "baths": 2.0, "sqft": 1400, "year_built": 1984, "property_type": "Single Family Home" },
-  "pricing": { "list_price": 2400, "currency": "USD", "period": "monthly|total" },
-  "dates": { "listed": "2025-11-01T00:00:00Z", "removed": null, "last_seen": "2025-11-05T14:12:33Z" },
-  "hoa": { "monthly": 0 },
+  "address": {
+    "formatted": "123 Main St, Austin, TX 78701",
+    "line1": "123 Main St",
+    "line2": null,
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78701",
+    "county": "Travis",
+    "county_fips": "48453",
+    "lat": 30.2672,
+    "lon": -97.7431
+  },
+  "facts": {
+    "beds": 3,
+    "baths": 2,
+    "sqft": 1400,
+    "year_built": 1984,
+    "property_type": "Single Family Home"
+  },
+  "pricing": {
+    "list_price": 2400,
+    "currency": "USD",
+    "period": "monthly|total"
+  },
+  "dates": {
+    "listed": "2025-11-01T00:00:00Z",
+    "removed": null,
+    "last_seen": "2025-11-05T14:12:33Z"
+  },
+  "hoa": {
+    "monthly": 0
+  },
   "distance_miles": 1.2,
-  "provider": { "name": "rentcast" }
+  "provider": {
+    "name": "rentcast"
+  }
 }
 ```
 

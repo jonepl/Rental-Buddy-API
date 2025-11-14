@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 geocoder = GeocodingService()
+property_service = PropertyService()
 
 
 @router.post("/sales", response_model=ListingsEnvelope)
@@ -35,6 +36,7 @@ async def sales(req: SearchRequest) -> ListingsEnvelope:
     rid = request_id()
     start = __import__("time").perf_counter()
 
+    # TODO: This code is similar to rentals; consider refactoring
     # Resolve center (address XOR lat/lon; if both, address wins)
     lat: Optional[float] = None
     lon: Optional[float] = None
@@ -102,6 +104,7 @@ async def sales(req: SearchRequest) -> ListingsEnvelope:
             if not duplicate:
                 deduped.append(n)
 
+    # This code is similar to rentals; consider refactoring
     # sort
     reverse = (req.sort.dir == "desc")
     if req.sort.by == "distance":

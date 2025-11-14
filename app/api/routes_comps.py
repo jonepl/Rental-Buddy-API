@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from fastapi import APIRouter
 
@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.post("/comps", response_model=CompsResponse)
-async def comps_by_ids(req: CompsRequestByIds | CompsRequestInline) -> CompsResponse:
+async def comps_by_ids(req: Union[CompsRequestByIds, CompsRequestInline]) -> CompsResponse:
     # Support inline and by-ids (from server cache)
     start = __import__("time").perf_counter()
     assumptions: Dict = (req.assumptions or {}).__dict__ if hasattr(req, "assumptions") else {}

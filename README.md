@@ -98,17 +98,43 @@ Or use coordinates directly:
     "radius_miles": 5.0,
     "days_old": "*:270"
   },
+  "summary": {
+    "returned": 50,
+    "count": null,
+    "page": { "limit": 50, "offset": 0, "next_offset": 50 }
+  },
   "listings": [
     {
       "id": "123",
-      "address": "456 Oak Ave, Fort Lauderdale, FL 33301",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "county": "Travis",
+      "formattedAddress": "123 Main St, Austin, TX 78701",
+      "addressLine1": "123 Main St",
+      "addressLine2": "Apt 12",
+      "propertyType": "Single Family Home",
+      "hoa": "N/A",
+      "hoaFee": 0,
+      "status": "Active",
+      "listedDate": "2025-11-01",
+      "removedDate": "2025-11-01",
+      "daysOnMarket": 30,
+      "latitude": 30.2672,
+      "longitude": -97.7431,
       "price": 2400,
       "bedrooms": 3,
       "bathrooms": 2.0,
       "square_footage": 1400,
-      "distance_miles": 0.8
     }
-  ]
+  ],
+  "meta": {
+    "category": "rental",
+    "request_id": "rb_2025-11-11T18:25:02Z_abc123",
+    "duration_ms": 612,
+    "cache": "hit|miss|partial",
+    "provider_calls": 2
+  }
 }
 ```
 

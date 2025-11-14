@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.api.routes_rentals import router as rentals_router
 from app.api.routes_sales import router as sales_router
 from app.api.routes_comps import router as comps_router
-from app.api.endpoints import router as legacy_router
+from app.api.routes_utils import router as utils_router
 
 # Configure logging
 logging.basicConfig(
@@ -40,7 +40,7 @@ app.add_middleware(
 app.include_router(rentals_router, prefix="/api/v1")
 app.include_router(sales_router, prefix="/api/v1")
 app.include_router(comps_router, prefix="/api/v1")
-app.include_router(legacy_router, prefix="/api/v1")
+app.include_router(utils_router, prefix="/api/v1")
 
 
 # Root endpoint
