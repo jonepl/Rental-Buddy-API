@@ -27,7 +27,9 @@ def test_paginate_clamps_limit_and_offset():
 def test_paginate_offset_beyond_total():
     returned, limit, next_offset = paginate(total=5, limit=10, offset=10)
     assert returned == 0
-    assert limit == 10 or limit == 5  # function clamps to max 100, so 10 is fine; accept either to be robust
+    assert (
+        limit == 10 or limit == 5
+    )  # function clamps to max 100, so 10 is fine; accept either to be robust
     assert next_offset is None
 
 

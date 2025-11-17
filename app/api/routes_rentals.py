@@ -8,19 +8,19 @@ from fastapi import APIRouter, HTTPException
 from app.core.pagination import paginate, slice_page
 from app.core.telemetry import duration_ms, request_id
 from app.domain.dto import (
+    Center,
+    EnvelopeMeta,
+    EnvelopeSummary,
+    InputFilters,
     ListingsEnvelope,
     NormalizedListing,
+    PageSpec,
     SearchInputSummary,
     SearchRequest,
-    EnvelopeSummary,
-    EnvelopeMeta,
-    PageSpec,
-    Center,
-    InputFilters,
 )
+from app.providers.rentcast.normalizer import normalize_rentcast_response
 from app.services.geocoding_service import GeocodingService
 from app.services.property_service import PropertyService
-from app.services.providers.rentcast import normalize_rentcast_response
 from app.services.result_cache import result_cache
 from app.utils.distance import haversine_distance
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 geocoder = GeocodingService()
-property_service = PropertyService()
+property_service = PropertyService(geocoder)
 
 
 @router.post("/rentals", response_model=ListingsEnvelope)
@@ -44,12 +44,34 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
     if req.address:
         g_lat, g_lon, g_formatted = await geocoder.geocode_address(req.address)
         if g_lat is None or g_lon is None:
-            raise HTTPException(status_code=400, detail={"error": {"code": "400_INVALID_INPUT", "message": g_formatted or "Could not resolve address", "details": {}}})
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": {
+                        "code": "400_INVALID_INPUT",
+                        "message": g_formatted or "Could not resolve address",
+                        "details": {},
+                    }
+                },
+            )
         lat, lon, resolved_addr = g_lat, g_lon, g_formatted
     else:
-        lat, lon, resolved_addr = req.latitude, req.longitude, f"Location at {req.latitude}, {req.longitude}"
+        lat, lon, resolved_addr = (
+            req.latitude,
+            req.longitude,
+            f"Location at {req.latitude}, {req.longitude}",
+        )
         if lat is None or lon is None:
-            raise HTTPException(status_code=400, detail={"error": {"code": "400_INVALID_INPUT", "message": "Invalid location", "details": {}}})
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": {
+                        "code": "400_INVALID_INPUT",
+                        "message": "Invalid location",
+                        "details": {},
+                    }
+                },
+            )
 
     raw_listings = await property_service.get_rental_data(
         latitude=lat,
@@ -67,21 +89,26 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
     # compute distance
     for n in normalized:
         if n.address.lat is not None and n.address.lon is not None:
-            n.distance_miles = haversine_distance(lat, lon, n.address.lat, n.address.lon)
+            n.distance_miles = haversine_distance(
+                lat, lon, n.address.lat, n.address.lon
+            )
 
     # filters
-    def passes_filters(n: NormalizedListing) -> bool:
-        price = n.pricing.list_price
-        sqft = n.facts.sqft
-        if req.min_price is not None and (price is None or price < req.min_price):
+    def in_range(val, r):
+        if r is None:
+            return True
+        if val is None:
             return False
-        if req.max_price is not None and (price is None or price > req.max_price):
+        if r.min is not None and val < r.min:
             return False
-        if req.min_sqft is not None and (sqft is None or sqft < req.min_sqft):
-            return False
-        if req.max_sqft is not None and (sqft is None or sqft > req.max_sqft):
+        if r.max is not None and val > r.max:
             return False
         return True
+
+    def passes_filters(n: NormalizedListing) -> bool:
+        return in_range(n.pricing.list_price, req.price) and in_range(
+            n.facts.sqft, req.sqft
+        )
 
     normalized = [n for n in normalized if passes_filters(n)]
 
@@ -99,8 +126,18 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
             # proximity dedupe
             duplicate = False
             for d in deduped:
-                if n.address.lat is not None and n.address.lon is not None and d.address.lat is not None and d.address.lon is not None:
-                    if haversine_distance(n.address.lat, n.address.lon, d.address.lat, d.address.lon) <= 0.016:
+                if (
+                    n.address.lat is not None
+                    and n.address.lon is not None
+                    and d.address.lat is not None
+                    and d.address.lon is not None
+                ):
+                    if (
+                        haversine_distance(
+                            n.address.lat, n.address.lon, d.address.lat, d.address.lon
+                        )
+                        <= 0.016
+                    ):
                         duplicate = True
                         break
             if not duplicate:
@@ -108,20 +145,34 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
 
     # This code is similar to sales; consider refactoring
     # sort
-    reverse = (req.sort.dir == "desc")
+    reverse = req.sort.dir == "desc"
     if req.sort.by == "distance":
-        deduped.sort(key=lambda x: (x.distance_miles is None, x.distance_miles or 0), reverse=reverse)
+        deduped.sort(
+            key=lambda x: (x.distance_miles is None, x.distance_miles or 0),
+            reverse=reverse,
+        )
     elif req.sort.by == "price":
-        deduped.sort(key=lambda x: (x.pricing.list_price is None, x.pricing.list_price or 0), reverse=reverse)
+        deduped.sort(
+            key=lambda x: (x.pricing.list_price is None, x.pricing.list_price or 0),
+            reverse=reverse,
+        )
     elif req.sort.by == "beds":
-        deduped.sort(key=lambda x: (x.facts.beds is None, x.facts.beds or 0), reverse=reverse)
+        deduped.sort(
+            key=lambda x: (x.facts.beds is None, x.facts.beds or 0), reverse=reverse
+        )
     elif req.sort.by == "baths":
-        deduped.sort(key=lambda x: (x.facts.baths is None, x.facts.baths or 0), reverse=reverse)
+        deduped.sort(
+            key=lambda x: (x.facts.baths is None, x.facts.baths or 0), reverse=reverse
+        )
     elif req.sort.by == "sqft":
-        deduped.sort(key=lambda x: (x.facts.sqft is None, x.facts.sqft or 0), reverse=reverse)
+        deduped.sort(
+            key=lambda x: (x.facts.sqft is None, x.facts.sqft or 0), reverse=reverse
+        )
 
     # cache full normalized array; paginate from cache
-    result_cache.put("last", center_lat=lat, center_lon=lon, category="rental", listings=deduped)
+    result_cache.put(
+        "last", center_lat=lat, center_lon=lon, category="rental", listings=deduped
+    )
 
     total = len(deduped)
     page_items = slice_page(deduped, req.limit, req.offset)
@@ -133,10 +184,21 @@ async def rentals(req: SearchRequest) -> ListingsEnvelope:
         input=SearchInputSummary(
             center=Center(lat=lat, lon=lon),
             radius_miles=req.radius_miles,
-            filters=InputFilters(beds=req.beds, baths=req.baths, days_old=req.days_old),
+            # populate legacy filter summary with min values for compatibility
+            filters=InputFilters(
+                beds=(req.beds.min if req.beds is not None else None),
+                baths=(req.baths.min if req.baths is not None else None),
+                days_old=(
+                    str(req.days_old.min)
+                    if (req.days_old is not None and req.days_old.min is not None)
+                    else None
+                ),
+            ),
         ),
         summary=EnvelopeSummary(
-            returned=returned, count=None, page=PageSpec(limit=limit, offset=req.offset, next_offset=next_offset)
+            returned=returned,
+            count=None,
+            page=PageSpec(limit=limit, offset=req.offset, next_offset=next_offset),
         ),
         listings=page_items,
         meta=EnvelopeMeta(

@@ -22,9 +22,22 @@ class ResultCache:
         self._ttl = ttl_seconds
         self._searches: Dict[str, CachedSearch] = {}
 
-    def put(self, key: str, center_lat: float, center_lon: float, category: str, listings: List[NormalizedListing]):
+    def put(
+        self,
+        key: str,
+        center_lat: float,
+        center_lon: float,
+        category: str,
+        listings: List[NormalizedListing],
+    ):
         now = time.time()
-        cs = CachedSearch(created=now, center_lat=center_lat, center_lon=center_lon, category=category, listings=listings)
+        cs = CachedSearch(
+            created=now,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            category=category,
+            listings=listings,
+        )
         cs.by_id = {x.id: x for x in listings}
         self._searches[key] = cs
 

@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 PAGINATION_LIMIT_MAX = 100
 
+
 def paginate(total: int, limit: int, offset: int) -> Tuple[int, int, int | None]:
     limit = max(1, min(PAGINATION_LIMIT_MAX, limit))
     offset = max(0, offset)

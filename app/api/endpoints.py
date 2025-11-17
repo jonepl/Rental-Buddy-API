@@ -1,11 +1,17 @@
+# Deprecated Module
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
 from app.core.constants import HttpStatus
-from app.models.schemas import (CompsRequest, ErrorCode, ErrorResponse,
-                                InputSummary, ListingResponse)
+from app.models.schemas import (
+    CompsRequest,
+    ErrorCode,
+    ErrorResponse,
+    InputSummary,
+    ListingResponse,
+)
 from app.services.cache_service import CacheService
 from app.services.geocoding_service import GeocodingService
 from app.services.property_service import PropertyService
@@ -17,7 +23,7 @@ router = APIRouter()
 
 # Service instances
 geocoding_service = GeocodingService()
-property_service = PropertyService()
+property_service = PropertyService(geocoding_service)
 cache_service = CacheService()
 
 
@@ -124,7 +130,7 @@ async def get_rental_data(request: CompsRequest):
 @router.post("/sales", response_model=ListingResponse)
 async def get_sales_data(request: CompsRequest):
     pass
-    
+
 
 async def _resolve_location(
     request: CompsRequest,

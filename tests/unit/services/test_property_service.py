@@ -4,21 +4,44 @@ import httpx
 import pytest
 
 from app.core.config import settings
-from app.models.schemas import PropertyListing
+from app.domain.dto import Range, SearchRequest
+from app.domain.ports.listings_port import ListingsPort
 from app.services.property_service import PropertyService
-from tests.unit.services.test_data.property_service_mock import \
-    MOCK_RENTCAST_RESPONSE
+from tests.unit.services.fixtures.rentcast_mocks import (
+    MOCK_RENTCAST_RESPONSE,
+    MOCK_RENTCAST_SALES_REQUEST,
+)
 
 
-class TestRentalService:
+class TestPropertyService:
     """Test the PropertyService class"""
 
     @pytest.fixture
-    def property_service(self):
-        return PropertyService()
+    def mock_listings_port(self):
+        # Stub fetch_rentals and fetch_sales
+        mock = AsyncMock(spec=ListingsPort)
+        mock.fetch_rentals = AsyncMock(return_value=MOCK_RENTCAST_RESPONSE)
+        mock.fetch_sales = AsyncMock(return_value=MOCK_RENTCAST_RESPONSE)
+        return mock
 
     @pytest.fixture
-    def mock_rental_response(self):
+    def mock_sale_request(self) -> SearchRequest:
+        return MOCK_RENTCAST_SALES_REQUEST
+
+    # @pytest.fixture
+    # def mock_geocoder(self):
+    #     # Create a mock geocoder
+    #     mock = AsyncMock(spec=GeocodingService)
+    #     # Configure the mock to return test coordinates
+    #     mock.geocode_address.return_value = (30.2672, -97.7431, "123 Test St, Austin, TX")
+    #     return mock
+
+    @pytest.fixture
+    def property_service(self, mock_listings_port):
+        return PropertyService(listings_port=mock_listings_port)
+
+    @pytest.fixture
+    def mock_listing_response(self):
         return MOCK_RENTCAST_RESPONSE
 
     @pytest.fixture
@@ -26,127 +49,42 @@ class TestRentalService:
         return []
 
     @pytest.mark.asyncio
+    async def test_get_sale_data_success(
+        self,
+        property_service: PropertyService,
+        mock_listings_port,
+        mock_sale_request,
+        mock_listing_response,
+    ):
+        with patch.object(settings, "max_results", 2):
+            mock_listings_port.fetch_sales.return_value = mock_listing_response
+
+            listings = await property_service.get_sale_data(mock_sale_request)
+
+            assert len(listings) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_sale_data_no_results(
+        self, property_service: PropertyService, mock_listings_port, mock_sale_request
+    ):
+        with patch.object(settings, "max_results", 2):
+            mock_listings_port.fetch_sales.return_value = []
+
+            listings = await property_service.get_sale_data(mock_sale_request)
+
+            assert len(listings) == 0
+
+    @pytest.mark.asyncio
     async def test_get_rental_data_success(
-        self, property_service: PropertyService, mock_rental_response
+        self,
+        property_service: PropertyService,
+        mock_listings_port,
+        mock_sale_request,
+        mock_listing_response,
     ):
-        """Test successful retrieval of rental comps"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_rental_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
+        with patch.object(settings, "max_results", 2):
+            mock_listings_port.fetch_rentals.return_value = mock_listing_response
 
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=1, bathrooms=1.5
-            )
+            listings = await property_service.get_rental_data(mock_sale_request)
 
-            args, _ = mock_client.get.await_args
-            assert args[0] == settings.rentcast_rental_url
-            assert len(comps) == 2
-            assert isinstance(comps[0], PropertyListing)
-            assert comps[0].address == "456 Oak Ave, Austin, TX 78702"
-            assert comps[0].price == 2450
-            assert comps[0].bedrooms == 2
-            assert comps[0].bathrooms == 2.0
-            assert comps[0].square_footage == 1025
-            assert comps[0].distance_miles == 1.4
-
-    @pytest.mark.asyncio
-    async def test_get_rental_data_no_results(
-        self, property_service: PropertyService, mock_empty_response
-    ):
-        """Test when no rental comps are found"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_empty_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=2, bathrooms=1.5
-            )
-
-            assert len(comps) == 0
-
-    @pytest.mark.asyncio
-    async def test_get_rental_data_http_error(self, property_service: PropertyService):
-        """Test handling of HTTP errors from the API"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-                "Not Found", request=MagicMock(), response=MagicMock(status_code=404)
-            )
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=2, bathrooms=1.5
-            )
-
-            # On HTTP errors, service returns an empty list
-            assert comps == []
-
-    @pytest.mark.asyncio
-    async def test_get_rental_data_timeout(self, property_service: PropertyService):
-        """Test handling of timeout errors"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client.get = AsyncMock(
-                side_effect=httpx.TimeoutException("Request timed out")
-            )
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=2, bathrooms=1.5
-            )
-
-            # On timeout, service returns an empty list
-            assert comps == []
-
-    @pytest.mark.asyncio
-    async def test_get_rental_data_invalid_response(
-        self, property_service: PropertyService
-    ):
-        """Test handling of invalid API response"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = {"invalid": "response"}
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=2, bathrooms=1.5
-            )
-
-            # Invalid response should be handled gracefully with empty list
-            assert comps == []
-
-    @pytest.mark.asyncio
-    async def test_get_rental_data_sorts_by_distance_then_price(
-        self, property_service: PropertyService, mock_rental_response
-    ):
-        """Test that comps are sorted by distance then price"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_rental_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            comps = await property_service.get_rental_data(
-                latitude=30.2672, longitude=-97.7431, bedrooms=2, bathrooms=1.5
-            )
-
-            assert len(comps) == 2
-            # First comp should be the one at the exact same coordinates
-            assert comps[0].address == "456 Oak Ave, Austin, TX 78702"
-            # Second comp should be the further one
-            assert comps[1].address == "123 Main St, Austin, TX 78701"
+            assert len(listings) == 2

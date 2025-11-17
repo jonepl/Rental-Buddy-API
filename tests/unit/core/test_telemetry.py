@@ -1,7 +1,7 @@
 import re
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from app.core.telemetry import request_id, duration_ms, timer
+from app.core.telemetry import duration_ms, request_id, timer
 
 
 def test_request_id_format_and_uniqueness():
@@ -23,11 +23,13 @@ def test_request_id_format_and_uniqueness():
     assert rid1 != rid2
     assert re.fullmatch(r"rb_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z_[0-9a-f]{6}", rid1)
 
+
 def test_timer_yields_start_and_zero():
     with patch("time.perf_counter", return_value=123.456):
         with timer() as (start, zero):
             assert start == 123.456
             assert zero == 0
+
 
 def test_duration_ms_deterministic():
     # Start time provided as arg; mock perf_counter to simulate now

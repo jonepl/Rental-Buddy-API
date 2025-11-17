@@ -1,7 +1,10 @@
 import pytest
 
-from app.utils.validators import (is_valid_us_address, normalize_bathrooms,
-                                  validate_coordinates)
+from app.utils.validators import (
+    is_valid_us_address,
+    normalize_bathrooms,
+    validate_coordinates,
+)
 
 
 def test_is_valid_us_address():

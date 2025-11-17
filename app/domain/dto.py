@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Literal, Dict, Any
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.domain.range_types import Range
 
 
 class SortBy(str, Enum):
@@ -23,32 +25,52 @@ class SearchRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     radius_miles: float = Field(default=5.0, gt=0)
-    beds: Optional[int] = Field(default=None, ge=0)
-    baths: Optional[float] = Field(default=None, gt=0)
-    min_price: Optional[int] = Field(default=None, ge=0)
-    max_price: Optional[int] = Field(default=None, ge=0)
-    min_sqft: Optional[int] = Field(default=None, ge=0)
-    max_sqft: Optional[int] = Field(default=None, ge=0)
-    days_old: Optional[str] = Field(default=None)
+    # range-only fields (object form)
+    beds: Optional[Range[int]] = None
+    baths: Optional[Range[float]] = None
+    price: Optional[Range[float]] = None
+    sqft: Optional[Range[int]] = None
+    year_built: Optional[Range[int]] = None
+    days_old: Optional[Range[int]] = None
     limit: int = Field(default=50, ge=1, le=100)
     offset: int = Field(default=0, ge=0)
     sort: SortSpec = Field(default_factory=SortSpec)
 
-    @field_validator("baths")
-    @classmethod
-    def validate_baths(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v * 2) % 1 != 0:
-            raise ValueError("baths must be in 0.5 increments")
-        return v
+    # no scalar baths validation now; enforce step on baths range in model_validator
 
     @model_validator(mode="after")
     def validate_location_input(self) -> "SearchRequest":
         # address XOR (lat & lon). If both, address wins but it's still valid
         if not self.address and (self.latitude is None or self.longitude is None):
             raise ValueError("Must provide either address or latitude & longitude")
+        # baths must adhere to 0.5 increments if provided
+        br = self.baths
+        if br is not None:
+            for val in (br.min, br.max):
+                if val is not None and (val * 2) % 1 != 0:
+                    raise ValueError("baths values must be in 0.5 increments")
+        # generic min <= max checks
+        for r in (
+            self.beds,
+            self.baths,
+            self.price,
+            self.sqft,
+            self.year_built,
+            self.days_old,
+        ):
+            if (
+                r is not None
+                and r.min is not None
+                and r.max is not None
+                and r.min > r.max
+            ):
+                raise ValueError("range min cannot be greater than max")
         return self
 
 
@@ -126,7 +148,9 @@ class NormalizedListing(BaseModel):
     dates: Dates = Field(default_factory=Dates)
     hoa: HOA = Field(default_factory=HOA)
     distance_miles: Optional[float] = None
-    provider: ProviderInfo = Field(default_factory=lambda: ProviderInfo(name="rentcast"))
+    provider: ProviderInfo = Field(
+        default_factory=lambda: ProviderInfo(name="rentcast")
+    )
 
 
 class EnvelopeSummary(BaseModel):

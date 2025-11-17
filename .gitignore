@@ -15,3 +15,5 @@ venv/
 
 # Development
 remaining_work.md
+
+tmp/

@@ -5,22 +5,21 @@ from typing import Dict, List, Union
 from fastapi import APIRouter
 
 from app.domain.analytics import compute_metrics
-from app.domain.dto import (
-    CompsRequestByIds,
-    CompsRequestInline,
-    CompsResponse,
-    CompRow,
-)
+from app.domain.dto import CompRow, CompsRequestByIds, CompsRequestInline, CompsResponse
 from app.services.result_cache import result_cache
 
 router = APIRouter()
 
 
 @router.post("/comps", response_model=CompsResponse)
-async def comps_by_ids(req: Union[CompsRequestByIds, CompsRequestInline]) -> CompsResponse:
+async def comps_by_ids(
+    req: Union[CompsRequestByIds, CompsRequestInline]
+) -> CompsResponse:
     # Support inline and by-ids (from server cache)
     start = __import__("time").perf_counter()
-    assumptions: Dict = (req.assumptions or {}).__dict__ if hasattr(req, "assumptions") else {}
+    assumptions: Dict = (
+        (req.assumptions or {}).__dict__ if hasattr(req, "assumptions") else {}
+    )
 
     listings: List[Dict] = []
     source = "inline"
@@ -55,8 +54,14 @@ async def comps_by_ids(req: Union[CompsRequestByIds, CompsRequestInline]) -> Com
         )
 
     return CompsResponse(
-        input={"count": len(listings), "metrics": list(rows[0].derived.keys()) if rows else []},
+        input={
+            "count": len(listings),
+            "metrics": list(rows[0].derived.keys()) if rows else [],
+        },
         rows=rows,
         summary={"by_group": {}, "global": {"n": len(listings)}},
-        meta={"duration_ms": int((__import__("time").perf_counter() - start) * 1000), "source": source},
+        meta={
+            "duration_ms": int((__import__("time").perf_counter() - start) * 1000),
+            "source": source,
+        },
     )

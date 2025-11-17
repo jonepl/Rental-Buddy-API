@@ -12,6 +12,7 @@ router = APIRouter()
 # Service instances
 cache_service = CacheService()
 
+
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""

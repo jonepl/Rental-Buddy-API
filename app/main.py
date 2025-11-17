@@ -4,11 +4,11 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
+from app.api.routes_comps import router as comps_router
 from app.api.routes_rentals import router as rentals_router
 from app.api.routes_sales import router as sales_router
-from app.api.routes_comps import router as comps_router
 from app.api.routes_utils import router as utils_router
+from app.core.config import settings
 
 # Configure logging
 logging.basicConfig(

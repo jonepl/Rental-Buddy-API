@@ -16,16 +16,22 @@ def price_per_sqft(price: Optional[float], sqft: Optional[float]) -> Optional[fl
     return safe_div(price, sqft)
 
 
-def rent_per_sqft(rent_monthly: Optional[float], sqft: Optional[float]) -> Optional[float]:
+def rent_per_sqft(
+    rent_monthly: Optional[float], sqft: Optional[float]
+) -> Optional[float]:
     return safe_div(rent_monthly, sqft)
 
 
-def rent_to_price(rent_monthly: Optional[float], price: Optional[float]) -> Optional[float]:
+def rent_to_price(
+    rent_monthly: Optional[float], price: Optional[float]
+) -> Optional[float]:
     annual = None if rent_monthly is None else rent_monthly * 12
     return safe_div(annual, price)
 
 
-def gross_yield(annual_rent: Optional[float], purchase_price: Optional[float]) -> Optional[float]:
+def gross_yield(
+    annual_rent: Optional[float], purchase_price: Optional[float]
+) -> Optional[float]:
     return safe_div(annual_rent, purchase_price)
 
 
@@ -43,7 +49,9 @@ def cap_rate(
     return safe_div(effective - op_ex_annual, purchase_price)
 
 
-def grm(purchase_price: Optional[float], annual_rent: Optional[float]) -> Optional[float]:
+def grm(
+    purchase_price: Optional[float], annual_rent: Optional[float]
+) -> Optional[float]:
     return safe_div(purchase_price, annual_rent)
 
 
@@ -75,6 +83,11 @@ def compute_metrics(row: Dict, assumptions: Dict) -> Dict[str, Optional[float]]:
         "rent_per_sqft": rent_per_sqft(rent_m, sqft),
         "rent_to_price": rent_to_price(rent_m, price),
         "gross_yield": gross_yield(annual_rent, purchase_price),
-        "cap_rate": cap_rate(annual_rent, assumptions.get("vacancy_pct", 0) or 0, op_ex_annual, purchase_price),
+        "cap_rate": cap_rate(
+            annual_rent,
+            assumptions.get("vacancy_pct", 0) or 0,
+            op_ex_annual,
+            purchase_price,
+        ),
         "grm": grm(purchase_price, annual_rent),
     }

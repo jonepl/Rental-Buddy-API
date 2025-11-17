@@ -59,57 +59,25 @@ class TestGeocodingService:
             assert formatted_address == "123 Main St, Austin, TX 78701, USA"
 
     @pytest.mark.asyncio
-    async def test_geocode_address_no_results(
-        self, geocoding_service: GeocodingService, mock_no_results_response
-    ):
-        """Test geocoding when no results are found"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_no_results_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            lat, lng, error = await geocoding_service.geocode_address(
-                "Nonexistent Address, ZZ"
-            )
-
-            assert lat is None
-            assert lng is None
-            assert "not found" in error.lower()
-
-    @pytest.mark.asyncio
     async def test_geocode_address_empty_address(
         self, geocoding_service: GeocodingService
     ):
         """Test geocoding with an empty address"""
-        lat, lng, error = await geocoding_service.geocode_address("")
-
-        assert lat is None
-        assert lng is None
-        assert "Address cannot be empty" in error
+        with pytest.raises(ValueError):
+            await geocoding_service.geocode_address("")
 
     @pytest.mark.asyncio
-    async def test_geocode_address_invalid_response(
-        self, geocoding_service: GeocodingService
-    ):
-        """Test handling of invalid API response"""
+    async def test_geocode_address_timeout(self, geocoding_service: GeocodingService):
+        """Test handling of timeout errors"""
         with patch("httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = {
-                "invalid": "response"
-            }  # Missing expected fields
-            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client.get = AsyncMock(
+                side_effect=httpx.TimeoutException("Request timed out")
+            )
             mock_client_cls.return_value.__aenter__.return_value = mock_client
 
-            lat, lng, error = await geocoding_service.geocode_address("123 Main St")
-
-            assert lat is None
-            assert lng is None
-            assert "could not extract" in error.lower() or "invalid" in error.lower()
+            with pytest.raises(TimeoutError):
+                await geocoding_service.geocode_address("123 Main St")
 
     @pytest.mark.asyncio
     async def test_geocode_address_http_error(
@@ -126,27 +94,39 @@ class TestGeocodingService:
             mock_client.get = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value.__aenter__.return_value = mock_client
 
-            lat, lng, error = await geocoding_service.geocode_address("123 Main St")
-
-            assert lat is None
-            assert lng is None
-            assert (
-                "not found" in error.lower()
-                or "geocoding service error: 404" in error.lower()
-            )
+            with pytest.raises(RuntimeError):
+                await geocoding_service.geocode_address("123 Main St")
 
     @pytest.mark.asyncio
-    async def test_geocode_address_timeout(self, geocoding_service: GeocodingService):
-        """Test handling of timeout errors"""
+    async def test_geocode_address_no_results(
+        self, geocoding_service: GeocodingService, mock_no_results_response
+    ):
+        """Test geocoding when no results are found"""
         with patch("httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(
-                side_effect=httpx.TimeoutException("Request timed out")
-            )
+            mock_response = MagicMock()
+            mock_response.raise_for_status.return_value = None
+            mock_response.json.return_value = mock_no_results_response
+            mock_client.get = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value.__aenter__.return_value = mock_client
 
-            lat, lng, error = await geocoding_service.geocode_address("123 Main St")
+            with pytest.raises(LookupError):
+                await geocoding_service.geocode_address("Nonexistent Address, ZZ")
 
-            assert lat is None
-            assert lng is None
-            assert "timeout" in error.lower() or "timed out" in error.lower()
+    @pytest.mark.asyncio
+    async def test_geocode_address_invalid_response(
+        self, geocoding_service: GeocodingService
+    ):
+        """Test handling of invalid API response"""
+        with patch("httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_response = MagicMock()
+            mock_response.raise_for_status.return_value = None
+            mock_response.json.return_value = {
+                "invalid": "response"
+            }  # Missing expected fields
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            with pytest.raises(LookupError):
+                await geocoding_service.geocode_address("123 Main St")
