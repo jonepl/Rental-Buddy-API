@@ -1,8 +1,8 @@
 import logging
 
 from app.core.config import settings
+from app.domain.dto import Center, ListingsRequest
 from app.domain.ports.geocoding_port import GeocodingPort
-from app.domain.dto import ListingsRequest, Center
 
 logger = logging.getLogger(__name__)
 

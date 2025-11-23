@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import pytest
 import httpx
+import pytest
 
 from app.domain.enums.context_request import OperationType
-from app.domain.exceptions.provider_exceptions import (
-    ProviderAuthError,
-    ProviderClientError,
-    ProviderNetworkError,
-    ProviderParsingError,
-    ProviderRateLimitError,
-    ProviderServerError,
-    ProviderTimeoutError,
-    ProviderUnexpectedError,
-)
+from app.domain.exceptions.provider_exceptions import (ProviderAuthError,
+                                                       ProviderClientError,
+                                                       ProviderNetworkError,
+                                                       ProviderParsingError,
+                                                       ProviderRateLimitError,
+                                                       ProviderServerError,
+                                                       ProviderTimeoutError,
+                                                       ProviderUnexpectedError)
 from app.providers.enums.provider import Provider
 from app.providers.shared.http import http_get_json
 
@@ -36,7 +34,9 @@ class MockAsyncClient:
 
 
 class DummyResponse:
-    def __init__(self, status_code=200, json_data=None, json_exc: Exception | None = None):
+    def __init__(
+        self, status_code=200, json_data=None, json_exc: Exception | None = None
+    ):
         self.status_code = status_code
         self._json_data = json_data
         self._json_exc = json_exc
@@ -107,7 +107,9 @@ async def test_http_get_json_timeout(monkeypatch):
         (418, ProviderUnexpectedError),
     ],
 )
-async def test_http_get_json_http_status_errors(monkeypatch, status_code, expected_exception):
+async def test_http_get_json_http_status_errors(
+    monkeypatch, status_code, expected_exception
+):
     resp = DummyResponse(status_code=status_code, json_data={})
     _patch_client(monkeypatch, response=resp)
 

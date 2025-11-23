@@ -3,8 +3,8 @@ from typing import Any, Dict, List
 
 from app.core.config import settings
 from app.domain.enums.context_request import OperationType
-from app.providers.shared.http import http_get_json
 from app.providers.enums.provider import Provider
+from app.providers.shared.http import http_get_json
 
 logger = logging.getLogger(__name__)
 

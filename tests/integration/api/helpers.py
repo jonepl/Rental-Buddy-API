@@ -2,16 +2,8 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional
 
-from app.domain.dto import (
-    HOA,
-    Address,
-    Dates,
-    Facts,
-    ListingsRequest,
-    NormalizedListing,
-    Pricing,
-    ProviderInfo,
-)
+from app.domain.dto import (HOA, Address, Dates, Facts, ListingsRequest,
+                            NormalizedListing, Pricing, ProviderInfo)
 
 
 def make_listing(
@@ -39,7 +31,11 @@ def make_listing(
 
 
 class StubListingsService:
-    def __init__(self, listings: Optional[List[NormalizedListing]] = None, error: Exception | None = None):
+    def __init__(
+        self,
+        listings: Optional[List[NormalizedListing]] = None,
+        error: Exception | None = None,
+    ):
         self.listings = listings or []
         self.error = error
         self.requests: List[ListingsRequest] = []
@@ -50,7 +46,9 @@ class StubListingsService:
             raise self.error
         return self.listings
 
-    async def get_rental_data(self, request: ListingsRequest) -> List[NormalizedListing]:
+    async def get_rental_data(
+        self, request: ListingsRequest
+    ) -> List[NormalizedListing]:
         self.requests.append(request)
         if self.error:
             raise self.error

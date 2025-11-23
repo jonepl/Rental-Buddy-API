@@ -4,14 +4,8 @@ import time
 from typing import List
 
 from app.api.presenters.listings_presenter import create_response
-from app.domain.dto import (
-    Address,
-    Facts,
-    ListingsRequest,
-    NormalizedListing,
-    Pricing,
-    Range,
-)
+from app.domain.dto import (Address, Facts, ListingsRequest, NormalizedListing,
+                            Pricing, Range)
 from app.domain.enums.context_request import OperationType
 
 

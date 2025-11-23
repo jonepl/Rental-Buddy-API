@@ -6,19 +6,15 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.core.config import settings
-from app.domain.dto import (
-    Address,
-    Facts,
-    ListingsRequest,
-    NormalizedListing,
-    Pricing,
-    SortSpec,
-)
+from app.domain.dto import (Address, Facts, ListingsRequest, NormalizedListing,
+                            Pricing, SortSpec)
 from app.domain.ports.listings_port import ListingsPort
 from app.services.listings_service import ListingsService, sort_listings
 
 
-def make_listing(list_price: float, beds: int, baths: float, sqft: int, listing_id: str) -> NormalizedListing:
+def make_listing(
+    list_price: float, beds: int, baths: float, sqft: int, listing_id: str
+) -> NormalizedListing:
     return NormalizedListing(
         id=listing_id,
         category="sale",
@@ -43,7 +39,9 @@ def service(listings_port: ListingsPort) -> ListingsService:
 
 
 @pytest.mark.asyncio
-async def test_get_sale_data_sorts_by_requested_field(service: ListingsService, listings_port: ListingsPort):
+async def test_get_sale_data_sorts_by_requested_field(
+    service: ListingsService, listings_port: ListingsPort
+):
     listings: List[NormalizedListing] = [
         make_listing(300000, 3, 2.0, 1400, "b"),
         make_listing(250000, 2, 1.5, 1000, "a"),
@@ -59,8 +57,12 @@ async def test_get_sale_data_sorts_by_requested_field(service: ListingsService, 
 
 
 @pytest.mark.asyncio
-async def test_get_rental_data_caps_results(service: ListingsService, listings_port: ListingsPort, monkeypatch):
-    listings_port.fetch_rentals.return_value = [make_listing(1, 1, 1.0, 1, "a") for _ in range(5)]
+async def test_get_rental_data_caps_results(
+    service: ListingsService, listings_port: ListingsPort, monkeypatch
+):
+    listings_port.fetch_rentals.return_value = [
+        make_listing(1, 1, 1.0, 1, "a") for _ in range(5)
+    ]
     req = ListingsRequest(latitude=1.0, longitude=1.0, radius_miles=5.0, limit=10)
 
     monkeypatch.setattr(settings, "max_results", 2)

@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict
 
 import pytest
+from pydantic import ValidationError
 
 from app.core.config import settings
 from app.domain.dto import ListingsRequest
 from app.domain.range_types import Range
 from app.providers.rentcast.mapper import build_params
-from pydantic import ValidationError
 
 
 def test_build_params_uses_lat_lon_with_radius(monkeypatch):

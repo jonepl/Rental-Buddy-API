@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Protocol, runtime_checkable
 
-from app.domain.dto import NormalizedListing, ListingsRequest
+from app.domain.dto import ListingsRequest, NormalizedListing
 
 
 @runtime_checkable

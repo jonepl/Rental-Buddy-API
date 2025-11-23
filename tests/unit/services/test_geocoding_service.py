@@ -22,7 +22,9 @@ def service(geocoding_port: GeocodingPort) -> GeocodingService:
 
 
 @pytest.mark.asyncio
-async def test_geocode_delegates_to_port(service: GeocodingService, geocoding_port: GeocodingPort):
+async def test_geocode_delegates_to_port(
+    service: GeocodingService, geocoding_port: GeocodingPort
+):
     request = ListingsRequest(latitude=30.0, longitude=-97.0, radius_miles=5.0, limit=1)
     expected = Center(lat=30.0, lon=-97.0)
     geocoding_port.geocode.return_value = expected

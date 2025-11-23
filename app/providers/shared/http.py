@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Union
+
 import httpx
 
-from app.providers.enums.provider import Provider
 from app.domain.enums.context_request import OperationType
-from app.domain.exceptions.provider_exceptions import (
-    ProviderAuthError,
-    ProviderClientError,
-    ProviderNetworkError,
-    ProviderParsingError,
-    ProviderRateLimitError,
-    ProviderServerError,
-    ProviderTimeoutError,
-    ProviderUnexpectedError,
-)
+from app.domain.exceptions.provider_exceptions import (ProviderAuthError,
+                                                       ProviderClientError,
+                                                       ProviderNetworkError,
+                                                       ProviderParsingError,
+                                                       ProviderRateLimitError,
+                                                       ProviderServerError,
+                                                       ProviderTimeoutError,
+                                                       ProviderUnexpectedError)
+from app.providers.enums.provider import Provider
 
 logger = logging.getLogger(__name__)
+
 
 async def http_get_json(
     url: str,
@@ -30,7 +30,9 @@ async def http_get_json(
 ) -> Union[dict, list]:
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            logger.info("%s %s request: %s %s", provider.value, operation.value, url, params)
+            logger.info(
+                "%s %s request: %s %s", provider.value, operation.value, url, params
+            )
             response = await client.get(url, params=params, headers=headers)
             response.raise_for_status()
     except httpx.TimeoutException as e:
@@ -45,7 +47,9 @@ async def http_get_json(
             raise ProviderClientError(f"{provider.value} client error {code}") from e
         if 500 <= code < 600:
             raise ProviderServerError(f"{provider.value} server error {code}") from e
-        raise ProviderUnexpectedError(f"Unexpected {provider.value} HTTP error {code}") from e
+        raise ProviderUnexpectedError(
+            f"Unexpected {provider.value} HTTP error {code}"
+        ) from e
     except httpx.HTTPError as e:
         raise ProviderNetworkError(f"{provider.value} network error") from e
     except Exception as e:

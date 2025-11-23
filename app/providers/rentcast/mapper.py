@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict
+
 from app.core.config import settings
 from app.domain.dto import ListingsRequest
 

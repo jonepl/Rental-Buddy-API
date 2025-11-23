@@ -3,19 +3,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from app.domain.exceptions.provider_exceptions import (
-    ProviderAuthError,
-    ProviderClientError,
-    ProviderParsingError,
-    ProviderRateLimitError,
-    ProviderServerError,
-    ProviderTimeoutError,
-)
+from app.domain.exceptions.provider_exceptions import (ProviderAuthError,
+                                                       ProviderClientError,
+                                                       ProviderParsingError,
+                                                       ProviderRateLimitError,
+                                                       ProviderServerError,
+                                                       ProviderTimeoutError)
 from app.providers.rentcast.client import RentCastClient
 from tests.unit.services.fixtures.rentcast_mocks import (
-    MOCK_RENTCAST_RESPONSE,
-    MOCK_RENTCAST_SALES_REQUEST,
-)
+    MOCK_RENTCAST_RESPONSE, MOCK_RENTCAST_SALES_REQUEST)
 
 
 class DummyResponse:

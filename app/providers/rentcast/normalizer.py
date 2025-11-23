@@ -2,15 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from app.domain.dto import (
-    Address,
-    Dates,
-    Facts,
-    Pricing,
-    ProviderInfo,
-    NormalizedListing,
-)
+from app.domain.dto import (Address, Dates, Facts, NormalizedListing, Pricing,
+                            ProviderInfo)
 from app.domain.enums.context_request import OperationType
+
 
 def normalize_listing(
     raw: Dict[str, Any], category: OperationType

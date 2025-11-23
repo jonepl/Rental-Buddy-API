@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class License(BaseModel):
@@ -28,15 +29,9 @@ class Bounds(BaseModel):
 class Components(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
-    iso_3166_1_alpha_2: Optional[str] = Field(
-        alias="ISO_3166-1_alpha-2", default=None
-    )
-    iso_3166_1_alpha_3: Optional[str] = Field(
-        alias="ISO_3166-1_alpha-3", default=None
-    )
-    iso_3166_2: Optional[List[str]] = Field(
-        alias="ISO_3166-2", default=None
-    )
+    iso_3166_1_alpha_2: Optional[str] = Field(alias="ISO_3166-1_alpha-2", default=None)
+    iso_3166_1_alpha_3: Optional[str] = Field(alias="ISO_3166-1_alpha-3", default=None)
+    iso_3166_2: Optional[List[str]] = Field(alias="ISO_3166-2", default=None)
 
     # Special underscored keys
     category: Optional[str] = Field(alias="_category", default=None)

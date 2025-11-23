@@ -5,7 +5,8 @@ from typing import Dict, List, Union
 from fastapi import APIRouter
 
 from app.domain.analytics import compute_metrics
-from app.domain.dto import CompRow, CompsRequestByIds, CompsRequestInline, CompsResponse
+from app.domain.dto import (CompRow, CompsRequestByIds, CompsRequestInline,
+                            CompsResponse)
 from app.services.result_cache import result_cache
 
 router = APIRouter()

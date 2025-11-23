@@ -160,7 +160,6 @@ pytest tests/integration/api
 ```bash
 black app tests
 isort app tests
-ruff check app tests  # if installed
 ```
 
 ### Docker

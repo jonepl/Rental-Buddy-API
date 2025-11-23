@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.domain.dto import Range, ListingsRequest
+from app.domain.dto import ListingsRequest, Range
 from app.domain.enums.context_request import OperationType
 from app.providers.rentcast.adapter import RentCastAdapter
 from app.providers.rentcast.client import RentCastClient
@@ -39,9 +39,7 @@ class TestRentCastAdapter:
 
     @pytest.fixture
     def mock_normalize_response(self):
-        with patch(
-            "app.providers.rentcast.adapter.normalize_response"
-        ) as mock:
+        with patch("app.providers.rentcast.adapter.normalize_response") as mock:
             mock.return_value = []
             yield mock
 

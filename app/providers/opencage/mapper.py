@@ -1,5 +1,6 @@
 from typing import Dict
 from urllib.parse import quote
+
 from app.domain.dto import ListingsRequest  # adjust import as needed
 
 
@@ -16,7 +17,7 @@ def build_params(req: ListingsRequest) -> Dict[str, str]:
     Returns: dict suitable for `params` in requests.get(...)
     """
 
-    params: Dict[str, str] = { }
+    params: Dict[str, str] = {}
 
     # ----------------------------------------
     # 1. Latitude + Longitude (+ optional radius)

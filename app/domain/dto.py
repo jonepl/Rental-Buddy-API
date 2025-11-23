@@ -3,7 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (BaseModel, ConfigDict, Field, field_validator,
+                      model_validator)
 
 from app.domain.range_types import Range
 
@@ -22,56 +23,63 @@ class SortSpec(BaseModel):
 
 
 class ListingsRequest(BaseModel):
-  model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-  address: Optional[str] = None
-  city: Optional[str] = None
-  state: Optional[str] = None
-  zip: Optional[str] = None
-  latitude: Optional[float] = None
-  longitude: Optional[float] = None
-  radius_miles: float = Field(default=5.0, gt=0)
-  # range-only fields (object form)
-  beds: Optional[Range[int]] = None
-  baths: Optional[Range[float]] = None
-  price: Optional[Range[float]] = None
-  sqft: Optional[Range[int]] = None
-  year_built: Optional[Range[int]] = None
-  days_old: Optional[Range[int]] = None
-  limit: int = Field(default=50, ge=1, le=100)
-  offset: int = Field(default=0, ge=0)
-  sort: SortSpec = Field(default_factory=SortSpec)
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    radius_miles: float = Field(default=5.0, gt=0)
+    # range-only fields (object form)
+    beds: Optional[Range[int]] = None
+    baths: Optional[Range[float]] = None
+    price: Optional[Range[float]] = None
+    sqft: Optional[Range[int]] = None
+    year_built: Optional[Range[int]] = None
+    days_old: Optional[Range[int]] = None
+    limit: int = Field(default=50, ge=1, le=100)
+    offset: int = Field(default=0, ge=0)
+    sort: SortSpec = Field(default_factory=SortSpec)
 
-  # no scalar baths validation now; enforce step on baths range in model_validator
+    # no scalar baths validation now; enforce step on baths range in model_validator
 
-  @model_validator(mode="after")
-  def validate_location_input(self) -> "ListingsRequest":
-    # address XOR (lat & lon). If both, address wins but it's still valid
-    if not self.address and (self.latitude is None or self.longitude is None) and (self.city is None or self.state is None) and self.zip is None:
-      raise ValueError("Must provide either address, latitude & longitude, or city + state")
-    # baths must adhere to 0.5 increments if provided
-    br = self.baths
-    if br is not None:
-      for val in (br.min, br.max):
-        if val is not None and (val * 2) % 1 != 0:
-          raise ValueError("baths values must be in 0.5 increments")
-    # generic min <= max checks
-    for r in (
-      self.beds,
-      self.baths,
-      self.price,
-      self.sqft,
-      self.year_built,
-      self.days_old,
-    ):
-      if (
-        r is not None
-        and r.min is not None
-        and r.max is not None
-        and r.min > r.max
-      ):
-        raise ValueError("range min cannot be greater than max")
-    return self
+    @model_validator(mode="after")
+    def validate_location_input(self) -> "ListingsRequest":
+        # address XOR (lat & lon). If both, address wins but it's still valid
+        if (
+            not self.address
+            and (self.latitude is None or self.longitude is None)
+            and (self.city is None or self.state is None)
+            and self.zip is None
+        ):
+            raise ValueError(
+                "Must provide either address, latitude & longitude, or city + state"
+            )
+        # baths must adhere to 0.5 increments if provided
+        br = self.baths
+        if br is not None:
+            for val in (br.min, br.max):
+                if val is not None and (val * 2) % 1 != 0:
+                    raise ValueError("baths values must be in 0.5 increments")
+        # generic min <= max checks
+        for r in (
+            self.beds,
+            self.baths,
+            self.price,
+            self.sqft,
+            self.year_built,
+            self.days_old,
+        ):
+            if (
+                r is not None
+                and r.min is not None
+                and r.max is not None
+                and r.min > r.max
+            ):
+                raise ValueError("range min cannot be greater than max")
+        return self
 
 
 class Center(BaseModel):
@@ -95,7 +103,7 @@ class SearchInputSummary(BaseModel):
     center: Optional[Center] = None
     radius_miles: Optional[float] = None
     filters: InputFilters
-    location: Optional[str] = None 
+    location: Optional[str] = None
 
     @classmethod
     def generate_input_summary(cls, request: ListingsRequest) -> SearchInputSummary:
@@ -109,10 +117,16 @@ class SearchInputSummary(BaseModel):
         filters = InputFilters(
             beds=request.beds.min if request.beds else None,
             baths=request.baths.min if request.baths else None,
-            days_old=str(request.days_old.min) if request.days_old and request.days_old.min is not None else None,
+            days_old=str(request.days_old.min)
+            if request.days_old and request.days_old.min is not None
+            else None,
         )
 
-        center = Center(lat=request.latitude, lon=request.longitude) if request.latitude and request.longitude else None
+        center = (
+            Center(lat=request.latitude, lon=request.longitude)
+            if request.latitude and request.longitude
+            else None
+        )
 
         return cls(
             center=center,
@@ -193,10 +207,10 @@ class EnvelopeMeta(BaseModel):
 
 
 class ListingsResponse(BaseModel):
-  input: SearchInputSummary
-  summary: EnvelopeSummary
-  listings: List[NormalizedListing]
-  meta: EnvelopeMeta
+    input: SearchInputSummary
+    summary: EnvelopeSummary
+    listings: List[NormalizedListing]
+    meta: EnvelopeMeta
 
 
 class ErrorDetail(BaseModel):

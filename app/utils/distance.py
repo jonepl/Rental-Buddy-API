@@ -1,6 +1,7 @@
 import math
 from typing import Tuple
 
+
 # TODO: Consider using 2 Center objects instead of lat/lon
 # TODO: Consider renaming Center
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

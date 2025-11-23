@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from app.providers.rentcast.normalizer import (
-    normalize_listing,
-    normalize_response,
-)
+from app.providers.rentcast.normalizer import (normalize_listing,
+                                               normalize_response)
 
 
 def test_normalize_rentcast_listing_rental():

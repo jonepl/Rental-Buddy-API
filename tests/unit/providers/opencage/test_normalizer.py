@@ -1,16 +1,9 @@
 from __future__ import annotations
 
 from app.domain.dto import Center
-from app.providers.opencage.models import (
-    Components,
-    GeocodeResponse,
-    Geometry,
-    License,
-    Rate,
-    Result,
-    Status,
-    Timestamp,
-)
+from app.providers.opencage.models import (Components, GeocodeResponse,
+                                           Geometry, License, Rate, Result,
+                                           Status, Timestamp)
 from app.providers.opencage.normalizer import normalize_response
 
 
