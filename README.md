@@ -1,20 +1,23 @@
 # Rental Buddy API
 
-A FastAPI-based service that provides rental property comparables ("comps") for real estate investment analysis.
+Rental Buddy is a FastAPI service that provides normalized rental and sales listing data by orchestrating multiple providers through a Hexagonal Architecture. Each port (RentCast, OpenCage, cache, pagination) is implemented as an adapter so the core domain and application services stay provider-agnostic.
 
 ## Overview
 
-Rental Buddy helps property investors and homebuyers evaluate rental potential by finding the 5 closest rental properties that match specific bedroom/bathroom criteria. The API integrates with OpenCage for geocoding and RentCast for rental data.
+- **Domain-first design** – Request/response DTOs, ports, and business rules live under `app/domain`.
+- **Application services** – `ListingsService` and `GeocodingService` orchestrate domain logic and call ports.
+- **Adapters** – RentCast and OpenCage providers implement the port contracts (`app/providers/**`), while FastAPI routes/presenters act as the driving adapters.
+- **Shared presenter** – `app/api/presenters/listings_presenter.py` renders the canonical `ListingsResponse` envelope for both `/sales` and `/rentals`.
+- **Extensive tests** – Unit tests for adapters, services, presenters, plus integration tests for the HTTP layer.
 
 ## Features
 
-- 🏠 Find rental comps by address or coordinates
-- 📍 Exact bedroom/bathroom matching
-- 📏 Distance-based sorting with Haversine calculation
-- ⚡ In-memory caching for performance
-- 🔒 Structured error handling with proper HTTP codes
-- 📊 OpenAPI/Swagger documentation
-- 🐳 Docker support
+- 🔄 Unified `/api/v1/sales` and `/api/v1/rentals` endpoints powered by the same application services
+- 🌐 Address, city/state, zip, or lat/lon search input with geocoding handled via an injected port
+- 🧭 Sorting, pagination, and filter summaries handled in the domain layer
+- 💾 Cache + telemetry metadata in every response envelope
+- 📑 Hex-friendly wiring through dependency overrides (great for testing/mocking)
+- 🐳 Docker-ready, with typed Pydantic models and structured provider error handling
 
 ## Quick Start
 
@@ -58,82 +61,62 @@ The API will be available at `http://localhost:8000`
 
 ## API Usage
 
-### Get Rental and Sales Data with Comparables Analytics
+### Rentals
 
 **POST** `/api/v1/rentals`
 
-#### Request Body
-
 ```json
 {
-  "address": "123 Main St, Fort Lauderdale, FL 33301",
-  "bedrooms": 3,
-  "bathrooms": 2.0,
-  "radius_miles": 5.0,
-  "days_old": "*:270"
+  "address": "123 Main St, Austin, TX",
+  "radius_miles": 5,
+  "beds": { "min": 2, "max": 5 },
+  "baths": { "min": 1.5 },
+  "sort": { "by": "price", "dir": "desc" }
 }
 ```
 
-Or use coordinates directly:
+### Sales
 
 ```json
 {
-  "latitude": 26.0052,
-  "longitude": -80.2128,
-  "bedrooms": 3,
-  "bathrooms": 2.0
+  "latitude": 30.26,
+  "longitude": -97.74,
+  "radius_miles": 10,
+  "price": { "max": 600000 },
+  "days_old": { "max": 60 },
+  "sort": { "by": "beds", "dir": "asc" }
 }
 ```
 
-#### Response
+### Response Envelope (shared presenter)
 
 ```json
 {
   "input": {
-    "resolved_address": "123 Main St, Fort Lauderdale, FL 33301",
-    "latitude": 26.0052,
-    "longitude": -80.2128,
-    "bedrooms": 3,
-    "bathrooms": 2.0,
-    "radius_miles": 5.0,
-    "days_old": "*:270"
+    "center": { "lat": 30.26, "lon": -97.74 },
+    "radius_miles": 5,
+    "filters": { "beds": 2, "baths": 1.5, "days_old": "1" },
+    "location": "123 Main St, Austin, TX"
   },
   "summary": {
     "returned": 50,
-    "count": null,
     "page": { "limit": 50, "offset": 0, "next_offset": 50 }
   },
   "listings": [
     {
-      "id": "123",
-      "city": "Austin",
-      "state": "TX",
-      "zip_code": "78701",
-      "county": "Travis",
-      "formattedAddress": "123 Main St, Austin, TX 78701",
-      "addressLine1": "123 Main St",
-      "addressLine2": "Apt 12",
-      "propertyType": "Single Family Home",
-      "hoa": "N/A",
-      "hoaFee": 0,
-      "status": "Active",
-      "listedDate": "2025-11-01",
-      "removedDate": "2025-11-01",
-      "daysOnMarket": 30,
-      "latitude": 30.2672,
-      "longitude": -97.7431,
-      "price": 2400,
-      "bedrooms": 3,
-      "bathrooms": 2.0,
-      "square_footage": 1400,
+      "id": "prov:rentcast:123",
+      "category": "rental",
+      "pricing": { "list_price": 2450, "currency": "USD", "period": "monthly" },
+      "facts": { "beds": 2, "baths": 2, "sqft": 1182 },
+      "address": { "formatted": "123 Main St, Austin, TX 78701" }
     }
   ],
   "meta": {
     "category": "rental",
     "request_id": "rb_2025-11-11T18:25:02Z_abc123",
     "duration_ms": 612,
-    "cache": "hit|miss|partial",
-    "provider_calls": 2
+    "cache": "miss",
+    "provider_calls": 1
   }
 }
 ```
@@ -164,24 +147,20 @@ Environment variables (see `.env` file):
 ### Running Tests
 
 ```bash
-# Run all tests
+# All tests
 pytest
 
-# Run with coverage
-pytest --cov=app
-
-# Run specific test file
-pytest tests/unit/utils/test_distance.py
+# Layer-specific
+pytest tests/unit/providers
+pytest tests/integration/api
 ```
 
-### Code Formatting
+### Code Quality
 
 ```bash
-# Format code
-black app/ tests/
-
-# Sort imports
-isort app/ tests/
+black app tests
+isort app tests
+ruff check app tests  # if installed
 ```
 
 ### Docker
@@ -200,22 +179,21 @@ docker run -p 8000:8000 --env-file .env rental-buddy
 rental-buddy/
 ├── app/
 │   ├── api/
-│   │   └── endpoints.py          # API route definitions
-│   ├── core/
-│   │   └── config.py            # Configuration settings
-│   ├── models/
-│   │   └── schemas.py           # Pydantic models
+│   │   ├── routes_*.py              # FastAPI adapters
+│   │   └── presenters/              # HTTP presenters (response envelopes)
+│   ├── domain/
+│   │   ├── dto.py                   # Core DTOs
+│   │   └── ports/                   # Listings & geocoding ports
+│   ├── providers/
+│   │   ├── rentcast/                # Provider adapters (client, mapper, normalizer)
+│   │   └── opencage/
 │   ├── services/
-│   │   ├── geocoding_service.py # OpenCage integration
-│   │   ├── property_service.py    # RentCast integration
-│   │   └── cache_service.py     # Caching layer
-│   ├── utils/
-│   │   ├── distance.py          # Haversine calculations
-│   │   └── validators.py        # Input validation
-│   └── main.py                  # FastAPI application
+│   │   ├── listings_service.py      # Application service (domain logic)
+│   │   └── geocoding_service.py
+│   └── core/, utils/, main.py       # Config, telemetry, app bootstrap
 ├── tests/
-│   ├── unit/                    # Unit tests
-│   └── integration/             # Integration tests
+│   ├── unit/                        # Unit tests (domain, services, adapters)
+│   └── integration/                 # FastAPI integration tests
 ├── requirements.txt
 ├── Dockerfile
 └── README.md
@@ -238,13 +216,6 @@ Error codes:
 - `422_VALIDATION_ERROR` - Schema validation failed
 - `429_RATE_LIMITED` - Rate limit exceeded
 - `502_PROVIDER_UNAVAILABLE` - External API unavailable
-
-## Performance
-
-- **Response Time**: < 2 seconds typical
-- **Concurrency**: Supports 100+ concurrent requests
-- **Caching**: 10-minute TTL for identical queries
-- **Rate Limiting**: Respects provider API limits
 
 ## License
 
