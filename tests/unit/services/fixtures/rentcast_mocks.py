@@ -1,4 +1,4 @@
-from app.api.routes_rentals import SearchRequest
+from app.api.routes_rentals import ListingsRequest
 from app.domain.dto import Range
 
 MOCK_RENTCAST_RESPONSE = [
@@ -102,7 +102,7 @@ MOCK_RENTCAST_RESPONSE = [
     },
 ]
 
-MOCK_RENTCAST_SALES_REQUEST: SearchRequest = SearchRequest(
+MOCK_RENTCAST_SALES_REQUEST: ListingsRequest = ListingsRequest(
     latitude=30.2672,
     longitude=-97.7431,
     radius_miles=10.0,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Protocol, runtime_checkable
 
-from app.domain.dto import NormalizedListing, SearchRequest
+from app.domain.dto import NormalizedListing, ListingsRequest
 
 
 @runtime_checkable
@@ -21,7 +21,7 @@ class ListingsPort(Protocol):
 
     async def fetch_rentals(
         self,
-        request: SearchRequest,
+        request: ListingsRequest,
     ) -> List[NormalizedListing]:
         """
         Fetch normalized *rental* listings matching the given search request.
@@ -44,7 +44,7 @@ class ListingsPort(Protocol):
 
     async def fetch_sales(
         self,
-        request: SearchRequest,
+        request: ListingsRequest,
     ) -> List[NormalizedListing]:
         """
         Fetch normalized *sale* listings matching the given search request.

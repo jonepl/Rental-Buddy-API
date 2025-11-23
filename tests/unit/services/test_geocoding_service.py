@@ -1,132 +1,33 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from __future__ import annotations
 
-import httpx
+from unittest.mock import AsyncMock
+
 import pytest
 
-from app.core.config import settings
+from app.domain.dto import Center, ListingsRequest
+from app.domain.ports.geocoding_port import GeocodingPort
 from app.services.geocoding_service import GeocodingService
 
 
-class TestGeocodingService:
-    """Test the GeocodingService class"""
+@pytest.fixture
+def geocoding_port() -> GeocodingPort:
+    port = AsyncMock(spec=GeocodingPort)
+    port.geocode = AsyncMock()
+    return port
 
-    @pytest.fixture
-    def geocoding_service(self):
-        return GeocodingService()
 
-    @pytest.fixture
-    def mock_success_response(self):
-        return {
-            "results": [
-                {
-                    "geometry": {"lat": 30.2672, "lng": -97.7431},
-                    "formatted": "123 Main St, Austin, TX 78701, USA",
-                }
-            ]
-        }
+@pytest.fixture
+def service(geocoding_port: GeocodingPort) -> GeocodingService:
+    return GeocodingService(geocoding_port=geocoding_port)
 
-    @pytest.fixture
-    def mock_no_results_response(self):
-        return {"results": []}
 
-    @pytest.mark.asyncio
-    async def test_geocode_address_success(
-        self, geocoding_service: GeocodingService, mock_success_response
-    ):
-        """Test successful geocoding of an address"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_success_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
+@pytest.mark.asyncio
+async def test_geocode_delegates_to_port(service: GeocodingService, geocoding_port: GeocodingPort):
+    request = ListingsRequest(latitude=30.0, longitude=-97.0, radius_miles=5.0, limit=1)
+    expected = Center(lat=30.0, lon=-97.0)
+    geocoding_port.geocode.return_value = expected
 
-            test_address = "123 Main St, Austin, TX"
-            lat, lng, formatted_address = await geocoding_service.geocode_address(
-                test_address
-            )
+    result = await service.geocode(request)
 
-            # Verify the correct URL and params were used
-            mock_client.get.assert_awaited_once()
-            args, kwargs = mock_client.get.await_args
-            assert args[0] == settings.opencage_url
-            assert kwargs["params"]["q"] == test_address
-
-            # Verify the response was parsed correctly
-            assert lat == 30.2672
-            assert lng == -97.7431
-            assert formatted_address == "123 Main St, Austin, TX 78701, USA"
-
-    @pytest.mark.asyncio
-    async def test_geocode_address_empty_address(
-        self, geocoding_service: GeocodingService
-    ):
-        """Test geocoding with an empty address"""
-        with pytest.raises(ValueError):
-            await geocoding_service.geocode_address("")
-
-    @pytest.mark.asyncio
-    async def test_geocode_address_timeout(self, geocoding_service: GeocodingService):
-        """Test handling of timeout errors"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client.get = AsyncMock(
-                side_effect=httpx.TimeoutException("Request timed out")
-            )
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            with pytest.raises(TimeoutError):
-                await geocoding_service.geocode_address("123 Main St")
-
-    @pytest.mark.asyncio
-    async def test_geocode_address_http_error(
-        self, geocoding_service: GeocodingService
-    ):
-        """Test handling of HTTP errors"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            # Simulate a 404 response causing raise_for_status to raise HTTPStatusError
-            mock_response = MagicMock()
-            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-                "Not Found", request=MagicMock(), response=MagicMock(status_code=404)
-            )
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            with pytest.raises(RuntimeError):
-                await geocoding_service.geocode_address("123 Main St")
-
-    @pytest.mark.asyncio
-    async def test_geocode_address_no_results(
-        self, geocoding_service: GeocodingService, mock_no_results_response
-    ):
-        """Test geocoding when no results are found"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = mock_no_results_response
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            with pytest.raises(LookupError):
-                await geocoding_service.geocode_address("Nonexistent Address, ZZ")
-
-    @pytest.mark.asyncio
-    async def test_geocode_address_invalid_response(
-        self, geocoding_service: GeocodingService
-    ):
-        """Test handling of invalid API response"""
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_response = MagicMock()
-            mock_response.raise_for_status.return_value = None
-            mock_response.json.return_value = {
-                "invalid": "response"
-            }  # Missing expected fields
-            mock_client.get = AsyncMock(return_value=mock_response)
-            mock_client_cls.return_value.__aenter__.return_value = mock_client
-
-            with pytest.raises(LookupError):
-                await geocoding_service.geocode_address("123 Main St")
+    geocoding_port.geocode.assert_awaited_once_with(request)
+    assert result == expected

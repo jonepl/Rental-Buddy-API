@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from app.domain.dto import NormalizedListing
+from app.domain.dto import ListingsResponse
 
 
 @dataclass
@@ -13,8 +13,8 @@ class CachedSearch:
     center_lat: float
     center_lon: float
     category: str
-    listings: List[NormalizedListing] = field(default_factory=list)
-    by_id: Dict[str, NormalizedListing] = field(default_factory=dict)
+    listings: List[ListingsResponse] = field(default_factory=list)
+    by_id: Dict[str, ListingsResponse] = field(default_factory=dict)
 
 
 class ResultCache:
@@ -28,7 +28,7 @@ class ResultCache:
         center_lat: float,
         center_lon: float,
         category: str,
-        listings: List[NormalizedListing],
+        listings: List[ListingsResponse],
     ):
         now = time.time()
         cs = CachedSearch(
@@ -47,13 +47,13 @@ class ResultCache:
             return None
         return [x.id for x in cs.listings]
 
-    def get_listing(self, key: str, id_: str) -> Optional[NormalizedListing]:
+    def get_listing(self, key: str, id_: str) -> Optional[ListingsResponse]:
         cs = self._get_valid(key)
         if not cs:
             return None
         return cs.by_id.get(id_)
 
-    def get_all(self, key: str) -> Optional[List[NormalizedListing]]:
+    def get_all(self, key: str) -> Optional[List[ListingsResponse]]:
         cs = self._get_valid(key)
         if not cs:
             return None

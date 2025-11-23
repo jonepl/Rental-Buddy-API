@@ -1,6 +1,6 @@
-from app.api.routes_sales import SearchRequest
+from app.api.routes_sales import ListingsRequest
 
-FULL_REQUEST: SearchRequest = {
+FULL_REQUEST: ListingsRequest = {
     "address": "string",
     "latitude": 0,
     "longitude": 0,

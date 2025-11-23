@@ -1,7 +1,8 @@
 import math
 from typing import Tuple
 
-
+# TODO: Consider using 2 Center objects instead of lat/lon
+# TODO: Consider renaming Center
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate the great circle distance between two points
@@ -27,3 +28,11 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     # Calculate the result and round to 1 decimal place
     distance = c * r
     return round(distance, 1)
+
+
+#   # calculate distance for each listing
+#   for norm in normalized:
+#       if norm.address.lat is not None and norm.address.lon is not None:
+#           norm.distance_miles = haversine_distance(
+#               req_lat, req_lon, norm.address.lat, norm.address.lon
+#           )

@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List
 
 from app.domain.dto import (
     Address,
     Dates,
     Facts,
-    NormalizedListing,
     Pricing,
     ProviderInfo,
+    NormalizedListing,
 )
+from app.domain.enums.context_request import OperationType
 
-
-def normalize_rentcast_listing(
-    raw: Dict[str, Any], category: Literal["rental", "sale"]
+def normalize_listing(
+    raw: Dict[str, Any], category: OperationType
 ) -> NormalizedListing:
     address = Address(
         formatted=raw.get("formattedAddress") or raw.get("address"),
-        line1=raw.get("line1") or None,
-        line2=raw.get("line2") or None,
+        line1=raw.get("addressLine1") or None,
+        line2=raw.get("addressLine2") or None,
         city=raw.get("city") or None,
         state=raw.get("state") or None,
-        zip=raw.get("zip") or None,
+        zip=raw.get("zipCode") or None,
         county=raw.get("county") or None,
-        county_fips=raw.get("county_fips") or None,
+        county_fips=raw.get("countyFips") or None,
         lat=raw.get("latitude") or raw.get("lat"),
         lon=raw.get("longitude") or raw.get("lon"),
     )
@@ -32,20 +32,20 @@ def normalize_rentcast_listing(
         beds=raw.get("bedrooms"),
         baths=raw.get("bathrooms"),
         sqft=raw.get("squareFootage") or raw.get("sqft"),
-        year_built=raw.get("year_built"),
-        property_type=raw.get("property_type"),
+        year_built=raw.get("yearBuilt"),
+        property_type=raw.get("propertyType"),
     )
 
     pricing = Pricing(
         list_price=raw.get("price"),
         currency="USD",
-        period="monthly" if category == "rental" else "total",
+        period="monthly" if category == OperationType.RENTALS else "total",
     )
 
     dates = Dates(
-        listed=raw.get("listed"),
-        removed=raw.get("removed"),
-        last_seen=raw.get("last_seen") or raw.get("updated_date"),
+        listed=raw.get("listedDate"),
+        removed=raw.get("removedDate"),
+        last_seen=raw.get("lastSeenDate"),
     )
 
     nid = raw.get("id") or raw.get("listing_id") or raw.get("mls_number") or "unknown"
@@ -53,7 +53,7 @@ def normalize_rentcast_listing(
 
     nl = NormalizedListing(
         id=normalized_id,
-        category=category,
+        category=category.value,
         status=raw.get("status"),
         address=address,
         facts=facts,
@@ -61,12 +61,12 @@ def normalize_rentcast_listing(
         dates=dates,
         hoa={"monthly": raw.get("hoaFee") or 0},  # type: ignore
         distance_miles=None,
-        provider=ProviderInfo(name="rentcast"),
+        provider=ProviderInfo(name="RentCast"),
     )
     return nl
 
 
-def normalize_rentcast_response(
-    rows: List[Dict[str, Any]], category: Literal["rental", "sale"]
+def normalize_response(
+    rows: List[Dict[str, Any]], category: OperationType
 ) -> List[NormalizedListing]:
-    return [normalize_rentcast_listing(r, category) for r in rows]
+    return [normalize_listing(r, category) for r in rows]
