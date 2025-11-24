@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     rentcast_api_key: str
 
     # API Endpoints
+    redis_url: str
+    redis_cache_prefix: str = "rb"
     rentcast_rental_url: str
     rentcast_sale_url: str
     opencage_url: str

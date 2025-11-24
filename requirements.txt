@@ -12,6 +12,7 @@ asyncio-throttle==1.0.2
 python-dotenv==1.0.0
 
 # Caching (optional)
+redis==4.6.0
 cachetools==5.3.2
 
 # Testing
