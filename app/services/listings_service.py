@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import json
-from typing import List
+from typing import List, Optional
 
 from app.core.config import settings
 from app.domain.dto import CachedListings, ListingsRequest, NormalizedListing, SortSpec
@@ -10,6 +10,7 @@ from app.domain.enums.context_request import OperationType
 from app.domain.ports.listings_port import ListingsPort
 from app.domain.ports.caching_port import CachePort
 from app.models.schemas import PropertyListing
+
 
 logger = logging.getLogger(__name__)
 

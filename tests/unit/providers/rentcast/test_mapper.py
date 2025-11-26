@@ -82,7 +82,7 @@ def test_build_params_applies_ranges(monkeypatch):
 
     assert params["bedrooms"] == "2:4"
     assert params["bathrooms"] == "1.5:3.5"
-    assert params["price"] == "200000:400000"
+    assert params["price"] == "200000.0:400000.0"
     assert params["squareFootage"] == "1000:2000"
     assert params["yearBuilt"] == "1990:2020"
     assert params["daysOld"] == "1:30"

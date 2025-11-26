@@ -12,7 +12,7 @@ async def get_listings_cache() -> CachePort[CachedListings]:
     """
     Construct a Redis-backed cache for normalized listings.
     """
-    redis = get_redis_client()
+    redis = await get_redis_client()
 
     if not await is_redis_connected(redis):
         return None

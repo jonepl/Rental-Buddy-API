@@ -1,5 +1,4 @@
-from app.api.routes_rentals import ListingsRequest
-from app.domain.dto import Range
+from app.domain.dto import ListingsRequest, Range
 
 MOCK_RENTCAST_RESPONSE = [
     {
@@ -106,9 +105,9 @@ MOCK_RENTCAST_SALES_REQUEST: ListingsRequest = ListingsRequest(
     latitude=30.2672,
     longitude=-97.7431,
     radius_miles=10.0,
-    beds=Range(min=1, max=3),
-    baths=Range(min=1.5),
-    days_old=Range(max=30),
+    beds=Range[int](min=1, max=3),
+    baths=Range[float](min=1.5),
+    days_old=Range[int](max=30),
 )
 
 MOCK_RENTCAST_SALES_RESPONSE = [
