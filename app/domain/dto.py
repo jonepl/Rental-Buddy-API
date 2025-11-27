@@ -207,10 +207,10 @@ class EnvelopeMeta(BaseModel):
 
 
 class ListingsResponse(BaseModel):
-  input: SearchInputSummary
-  summary: EnvelopeSummary
-  listings: List[NormalizedListing]
-  meta: EnvelopeMeta
+    input: SearchInputSummary
+    summary: EnvelopeSummary
+    listings: List[NormalizedListing]
+    meta: EnvelopeMeta
 
 
 class CachedListings(BaseModel):

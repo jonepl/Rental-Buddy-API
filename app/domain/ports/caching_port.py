@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, TypeVar, Generic, Optional
+from typing import Generic, Optional, Protocol, TypeVar
 
 T = TypeVar("T")
 

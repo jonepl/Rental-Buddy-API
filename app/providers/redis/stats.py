@@ -1,5 +1,6 @@
 from redis.asyncio import Redis
 
+
 async def get_redis_stats(redis: Redis) -> dict:
     """
     Get Redis statistics.
@@ -15,14 +16,14 @@ async def get_redis_stats(redis: Redis) -> dict:
     return {
         "hits": info.get("keyspace_hits", 0),
         "misses": info.get("keyspace_misses", 0),
-        "hit_rate": compute_hit_rate(info),
+        "hit_rate": _compute_hit_rate(info),
         "evicted_keys": info.get("evicted_keys", 0),
         "expired_keys": info.get("expired_keys", 0),
         "used_memory_human": memory.get("used_memory_human"),
     }
 
 
-def compute_hit_rate(info: dict) -> float:
+def _compute_hit_rate(info: dict) -> float:
     hits = info.get("keyspace_hits", 0)
     misses = info.get("keyspace_misses", 0)
     total = hits + misses

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
 import json
+import logging
 from typing import List, Optional
 
 from app.core.config import settings
-from app.domain.dto import CachedListings, ListingsRequest, NormalizedListing, SortSpec
+from app.domain.dto import (CachedListings, ListingsRequest, NormalizedListing,
+                            SortSpec)
 from app.domain.enums.context_request import OperationType
-from app.domain.ports.listings_port import ListingsPort
 from app.domain.ports.caching_port import CachePort
+from app.domain.ports.listings_port import ListingsPort
 from app.models.schemas import PropertyListing
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,6 @@ class ListingsService:
 
         listings = await self.listings_port.fetch_sales(request)
         listings = sort_listings(listings, request.sort)
-        listings = listings[: settings.max_results]
 
         if self.cache:
             await self.cache.set(cache_key, CachedListings(items=listings))
@@ -49,7 +48,9 @@ class ListingsService:
 
         return listings
 
-    async def get_rental_data(self, request: ListingsRequest) -> List[NormalizedListing]:
+    async def get_rental_data(
+        self, request: ListingsRequest
+    ) -> List[NormalizedListing]:
         """
         Fetch rental listings from RentCast API and return filtered/sorted comps
 
@@ -66,7 +67,6 @@ class ListingsService:
 
         listings = await self.listings_port.fetch_rentals(request)
         listings = sort_listings(listings, request.sort)
-        listings = listings[: settings.max_results]
 
         if self.cache:
             await self.cache.set(cache_key, CachedListings(items=listings))
@@ -138,7 +138,6 @@ class ListingsService:
         """
         payload = json.dumps(request.model_dump(), sort_keys=True)
         return f"{op.value}:{payload}"
-
 
 
 def sort_listings(

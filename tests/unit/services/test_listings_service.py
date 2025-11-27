@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.core.config import settings
-from app.domain.dto import (Address, Facts, ListingsRequest, NormalizedListing,
-                            Pricing, SortSpec)
+from app.domain.dto import (Address, CachedListings, Facts, ListingsRequest,
+                            NormalizedListing, Pricing, SortSpec)
 from app.domain.ports.listings_port import ListingsPort
 from app.services.listings_service import ListingsService, sort_listings
 
@@ -34,13 +33,25 @@ def listings_port() -> ListingsPort:
 
 
 @pytest.fixture
-def service(listings_port: ListingsPort) -> ListingsService:
-    return ListingsService(listings_port=listings_port)
+def cache_port():
+    class CacheStub:
+        def __init__(self):
+            self.get = AsyncMock(return_value=None)
+            self.set = AsyncMock()
+            self.delete = AsyncMock()
+            self.clear = AsyncMock()
+
+    return CacheStub()
+
+
+@pytest.fixture
+def service(listings_port: ListingsPort, cache_port) -> ListingsService:
+    return ListingsService(listings_port=listings_port, cache_port=cache_port)
 
 
 @pytest.mark.asyncio
 async def test_get_sale_data_sorts_by_requested_field(
-    service: ListingsService, listings_port: ListingsPort
+    service: ListingsService, listings_port: ListingsPort, cache_port
 ):
     listings: List[NormalizedListing] = [
         make_listing(300000, 3, 2.0, 1400, "b"),
@@ -54,23 +65,59 @@ async def test_get_sale_data_sorts_by_requested_field(
 
     listings_port.fetch_sales.assert_awaited_once_with(req)
     assert [l.id for l in result] == ["a", "b"]
+    cache_port.get.assert_awaited_once()
+    cache_port.set.assert_awaited_once()
+    args, _ = cache_port.set.await_args
+    assert isinstance(args[1], CachedListings)
+    assert [l.id for l in args[1].items] == ["a", "b"]
 
 
 @pytest.mark.asyncio
-async def test_get_rental_data_caps_results(
-    service: ListingsService, listings_port: ListingsPort, monkeypatch
+async def test_get_sale_data_returns_cached_items(
+    service: ListingsService, listings_port: ListingsPort, cache_port
 ):
-    listings_port.fetch_rentals.return_value = [
-        make_listing(1, 1, 1.0, 1, "a") for _ in range(5)
+    cached_listings = [
+        make_listing(400000, 4, 3.0, 2000, "cached"),
     ]
+    cache_port.get.return_value = CachedListings(items=cached_listings)
     req = ListingsRequest(latitude=1.0, longitude=1.0, radius_miles=5.0, limit=10)
 
-    monkeypatch.setattr(settings, "max_results", 2)
+    result = await service.get_sale_data(req)
+
+    assert result == cached_listings
+    listings_port.fetch_sales.assert_not_awaited()
+    cache_port.set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_get_rental_data_caches_results(
+    service: ListingsService, listings_port: ListingsPort, cache_port
+):
+    listings = [make_listing(1, 1, 1.0, 1, "a")]
+    listings_port.fetch_rentals.return_value = listings
+    req = ListingsRequest(latitude=1.0, longitude=1.0, radius_miles=5.0, limit=10)
 
     result = await service.get_rental_data(req)
 
     listings_port.fetch_rentals.assert_awaited_once_with(req)
-    assert len(result) == 2
+    cache_port.get.assert_awaited_once()
+    cache_port.set.assert_awaited_once()
+    assert result == listings
+
+
+@pytest.mark.asyncio
+async def test_get_rental_data_returns_cached_items(
+    service: ListingsService, listings_port: ListingsPort, cache_port
+):
+    cached_listings = [make_listing(1, 1, 1.0, 1, "cached-rental")]
+    cache_port.get.return_value = CachedListings(items=cached_listings)
+    req = ListingsRequest(latitude=1.0, longitude=1.0, radius_miles=5.0, limit=10)
+
+    result = await service.get_rental_data(req)
+
+    assert result == cached_listings
+    listings_port.fetch_rentals.assert_not_awaited()
+    cache_port.set.assert_not_awaited()
 
 
 def test_sort_listings_handles_missing_sort_key():

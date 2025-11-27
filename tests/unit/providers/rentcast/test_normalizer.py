@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Dict, List
 
+from app.domain.enums.context_request import OperationType
 from app.providers.rentcast.normalizer import (normalize_listing,
                                                normalize_response)
-from app.domain.enums.context_request import OperationType
+
 
 def test_normalize_rentcast_listing_rental():
     raw = {

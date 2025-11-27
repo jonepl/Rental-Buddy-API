@@ -23,11 +23,11 @@ class TestRentCastAdapter:
     def sample_request(self):
         return ListingsRequest(
             address="123 Test St, Austin, TX",
-            beds=Range(min=2, max=3),
-            baths=Range(min=2.0),
-            price=Range(max=500000),
-            sqft=Range(min=1000),
-            days_old=Range(max=30),
+            beds=Range[int](min=2, max=3),
+            baths=Range[float](min=2.0),
+            price=Range[float](max=500000),
+            sqft=Range[int](min=1000),
+            days_old=Range[int](max=30),
             radius_miles=10.0,
         )
 

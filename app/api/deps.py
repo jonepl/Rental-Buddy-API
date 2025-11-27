@@ -1,12 +1,13 @@
-from app.providers.rentcast.adapter import RentCastAdapter
-from app.providers.rentcast.client import RentCastClient
-from app.services.listings_service import ListingsService
-from app.providers.redis.client import get_redis_client
+from app.core.config import settings
 from app.domain.dto import CachedListings
 from app.domain.ports.caching_port import CachePort
 from app.providers.redis.adapter import RedisModelCacheAdapter
-from app.core.config import settings
+from app.providers.redis.client import get_redis_client
 from app.providers.redis.utils import is_redis_connected
+from app.providers.rentcast.adapter import RentCastAdapter
+from app.providers.rentcast.client import RentCastClient
+from app.services.listings_service import ListingsService
+
 
 async def get_listings_cache() -> CachePort[CachedListings]:
     """

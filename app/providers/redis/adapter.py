@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Generic, Optional, Type, TypeVar, Callable, Any
+from typing import Callable, Generic, Optional, Type, TypeVar
 
 from pydantic import BaseModel
-from redis.asyncio import Redis
+from redis.asyncio import Redis, RedisError
 
-from app.domain.ports.caching_port import CachePort
 from app.core.config import settings
+from app.domain.ports.caching_port import CachePort
 
 logger = logging.getLogger(__name__)
 
@@ -40,24 +40,15 @@ class RedisModelCacheAdapter(CachePort[T], Generic[T]):
         self._serializer = serializer or self._default_serialize
         self._deserializer = deserializer or self._default_deserialize
 
-    def _key(self, key: str) -> str:
-        return f"{self._prefix}:{key}"
-
-    def _default_serialize(self, value: T) -> str:
-        # Pydantic v2 uses model_dump_json; v1 uses json().
-        if hasattr(value, "model_dump_json"):
-            return value.model_dump_json()
-        return value.json()
-
-    def _default_deserialize(self, raw: str) -> T:
-        # Pydantic v2 uses model_validate_json; v1 uses parse_raw.
-        if hasattr(self._model_cls, "model_validate_json"):
-            return self._model_cls.model_validate_json(raw)
-        return self._model_cls.parse_raw(raw)
-
     async def get(self, key: str) -> Optional[T]:
         full_key = self._key(key)
-        raw = await self._redis.get(full_key)
+
+        try:
+            raw = await self._redis.get(full_key)
+        except RedisError:
+            logger.exception("Failed to retrieve cached value for key: %s", full_key)
+            return None
+
         if raw is None:
             logger.debug("Redis cache MISS: %s", full_key)
             return None
@@ -97,9 +88,26 @@ class RedisModelCacheAdapter(CachePort[T], Generic[T]):
         pattern = f"{self._prefix}:*"
         cursor: int | str = 0
         while True:
-            cursor, keys = await self._redis.scan(cursor=cursor, match=pattern, count=100)
+            cursor, keys = await self._redis.scan(
+                cursor=cursor, match=pattern, count=100
+            )
             if keys:
                 await self._redis.delete(*keys)
             if cursor == 0:
                 break
         logger.info("Redis cache CLEARED for prefix: %s", self._prefix)
+
+    def _key(self, key: str) -> str:
+        return f"{self._prefix}:{key}"
+
+    def _default_serialize(self, value: T) -> str:
+        # Pydantic v2 uses model_dump_json; v1 uses json().
+        if hasattr(value, "model_dump_json"):
+            return value.model_dump_json()
+        return value.json()
+
+    def _default_deserialize(self, raw: str) -> T:
+        # Pydantic v2 uses model_validate_json; v1 uses parse_raw.
+        if hasattr(self._model_cls, "model_validate_json"):
+            return self._model_cls.model_validate_json(raw)
+        return self._model_cls.parse_raw(raw)
