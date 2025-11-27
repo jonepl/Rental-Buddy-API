@@ -213,6 +213,10 @@ class ListingsResponse(BaseModel):
     meta: EnvelopeMeta
 
 
+class CachedListings(BaseModel):
+    items: List[NormalizedListing]
+
+
 class ErrorDetail(BaseModel):
     code: str
     message: str

@@ -1,18 +1,28 @@
+from __future__ import annotations
+
+import json
 import logging
-from typing import List, Tuple
+from typing import List, Optional
 
 from app.core.config import settings
-from app.domain.dto import ListingsRequest, NormalizedListing, SortSpec
+from app.domain.dto import (CachedListings, ListingsRequest, NormalizedListing,
+                            SortSpec)
+from app.domain.enums.context_request import OperationType
+from app.domain.ports.caching_port import CachePort
 from app.domain.ports.listings_port import ListingsPort
 from app.models.schemas import PropertyListing
-from app.providers.rentcast.models import RentCastPropertyListing
 
 logger = logging.getLogger(__name__)
 
 
 class ListingsService:
-    def __init__(self, listings_port: ListingsPort):
+    def __init__(
+        self,
+        listings_port: ListingsPort,
+        cache_port: Optional[CachePort[CachedListings]] = None,
+    ):
         self.listings_port = listings_port
+        self.cache = cache_port
 
     async def get_sale_data(self, request: ListingsRequest) -> List[NormalizedListing]:
         """
@@ -21,20 +31,48 @@ class ListingsService:
         Returns:
             List of PropertyListing objects, sorted by distance then price then sqft
         """
+        cache_key = self._build_cache_key(request, OperationType.SALES)
+
+        if self.cache:
+            cached = await self.cache.get(cache_key)
+            if cached is not None:
+                logger.info("Listings cache HIT (sales): %s", cache_key)
+                return cached.items
+
         listings = await self.listings_port.fetch_sales(request)
-        return sort_listings(listings, request.sort)
+        listings = sort_listings(listings, request.sort)
+
+        if self.cache:
+            await self.cache.set(cache_key, CachedListings(items=listings))
+            logger.info("Listings cache SET (sales): %s", cache_key)
+
+        return listings
 
     async def get_rental_data(
         self, request: ListingsRequest
-    ) -> Tuple[List[RentCastPropertyListing], float, float]:
+    ) -> List[NormalizedListing]:
         """
         Fetch rental listings from RentCast API and return filtered/sorted comps
 
         Returns:
             List of PropertyListing objects, sorted by distance then price then sqft
         """
+        cache_key = self._build_cache_key(request, OperationType.RENTALS)
+
+        if self.cache:
+            cached = await self.cache.get(cache_key)
+            if cached is not None:
+                logger.info("Listings cache HIT (rentals): %s", cache_key)
+                return cached.items
+
         listings = await self.listings_port.fetch_rentals(request)
-        return listings[: settings.max_results]
+        listings = sort_listings(listings, request.sort)
+
+        if self.cache:
+            await self.cache.set(cache_key, CachedListings(items=listings))
+            logger.info("Listings cache SET (rentals): %s", cache_key)
+
+        return listings
 
     async def get_mock_comps(
         self,
@@ -89,6 +127,17 @@ class ListingsService:
         ]
 
         return [PropertyListing(**listing) for listing in mock_listings]
+
+    def _build_cache_key(
+        self,
+        request: ListingsRequest,
+        op: OperationType,
+    ) -> str:
+        """
+        Build a stable cache key from the request.
+        """
+        payload = json.dumps(request.model_dump(), sort_keys=True)
+        return f"{op.value}:{payload}"
 
 
 def sort_listings(

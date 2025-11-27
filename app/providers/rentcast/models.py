@@ -58,7 +58,7 @@ class RentCastPropertyListing(BaseModel):
     square_footage: Optional[int] = Field(alias="squareFootage", default=None)
     lot_size: Optional[int] = Field(alias="lotSize", default=None)
     year_built: Optional[int] = Field(alias="yearBuilt", default=None)
-    hoa: Optional[HOA] = None
+    hoa: Optional[HOA] = Field(alias="hoa", default=None)
 
     status: Optional[str] = None
     price: Optional[float] = None

@@ -1,16 +1,14 @@
 import logging
-from typing import List, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from redis.asyncio import Redis
 
-from app.services.cache_service import CacheService
+from app.providers.redis.client import get_redis_client
+from app.providers.redis.stats import get_redis_stats
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-# Service instances
-cache_service = CacheService()
 
 
 @router.get("/health")
@@ -20,6 +18,6 @@ async def health_check():
 
 
 @router.get("/cache/stats")
-async def get_cache_stats():
+async def get_cache_stats(redis: Redis = Depends(get_redis_client)):
     """Get cache statistics (for debugging)"""
-    return cache_service.get_stats()
+    return await get_redis_stats(redis)

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 T = TypeVar("T", int, float)
 
 
-class Range(Generic[T], BaseModel):
+class Range(BaseModel, Generic[T]):
     model_config = ConfigDict(extra="forbid")
 
     min: Optional[T] = None

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
+from app.domain.enums.context_request import OperationType
 from app.providers.rentcast.normalizer import (normalize_listing,
                                                normalize_response)
 
@@ -20,12 +21,12 @@ def test_normalize_rentcast_listing_rental():
         "bathrooms": 2.5,
         "squareFootage": 1500,
         "price": 2500,
-        "listed": "2024-01-01",
+        "listedDate": "2024-01-01",
         "status": "Active",
         "hoaFee": 150,
     }
 
-    listing = normalize_listing(raw, "rental")
+    listing = normalize_listing(raw, OperationType.RENTALS)
 
     assert listing.id == "prov:rentcast:123"
     assert listing.category == "rental"
@@ -41,26 +42,26 @@ def test_normalize_rentcast_listing_rental():
 def test_normalize_rentcast_listing_sale_fallbacks():
     raw = {
         "listing_id": "456",
-        "address": "456 Elm",
-        "line1": "456 Elm",
-        "line2": "Unit 2",
+        "addressLine1": "456 Elm",
+        "addressLine2": "Unit 2",
         "city": "Austin",
         "state": "TX",
-        "zip": "78702",
-        "lat": 30.1,
-        "lon": -97.1,
+        "zipCode": "78702",
+        "latitude": 30.1,
+        "longitude": -97.1,
         "bedrooms": 4,
         "bathrooms": 3.0,
-        "sqft": 2000,
+        "squareFootage": 2000,
         "price": 550000,
         "status": "Sold",
-        "last_seen": "2024-01-02",
+        "lastSeenDate": "2024-01-02",
     }
 
-    listing = normalize_listing(raw, "sale")
+    listing = normalize_listing(raw, OperationType.SALES)
 
     assert listing.id == "prov:rentcast:456"
     assert listing.category == "sale"
+    assert listing.address.line1 == "456 Elm"
     assert listing.address.line2 == "Unit 2"
     assert listing.facts.sqft == 2000
     assert listing.pricing.period == "total"
@@ -74,7 +75,7 @@ def test_normalize_rentcast_response_batch():
         {"id": "2", "price": 200},
     ]
 
-    listings = normalize_response(raw_rows, "rental")
+    listings = normalize_response(raw_rows, OperationType.RENTALS)
 
     assert len(listings) == 2
     assert [listing.id for listing in listings] == [
