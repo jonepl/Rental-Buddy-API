@@ -6,9 +6,9 @@ from datetime import datetime
 from statistics import mean, median
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from app.domain.dto import (ClusterRentStats, DistanceMetrics, NormalizedListing,
-                            OverallRentMetrics, PropertyTypeStats,
-                            RegionalMetrics)
+from app.domain.dto import (ClusterRentStats, DistanceMetrics,
+                            NormalizedListing, OverallRentMetrics,
+                            PropertyTypeStats, RegionalMetrics)
 from app.utils.distance import haversine_distance
 
 
@@ -236,9 +236,7 @@ def _pearson_correlation(pairs: Sequence[Tuple[float, float]]) -> Optional[float
     return numerator / denominator
 
 
-def _distance_weighted_median(
-    pairs: Sequence[Tuple[float, float]]
-) -> Optional[float]:
+def _distance_weighted_median(pairs: Sequence[Tuple[float, float]]) -> Optional[float]:
     if not pairs:
         return None
     weights_pairs = []
@@ -265,7 +263,9 @@ def _build_property_stats(
 ) -> PropertyTypeStats:
     rent_values = [entry["rent"] for entry in entries if entry["rent"] is not None]
     rent_per_sqft_values = [
-        entry["rent_per_sqft"] for entry in entries if entry["rent_per_sqft"] is not None
+        entry["rent_per_sqft"]
+        for entry in entries
+        if entry["rent_per_sqft"] is not None
     ]
     sqft_values = [entry["sqft"] for entry in entries if entry["sqft"] is not None]
     dom_values = [entry["dom"] for entry in entries if entry["dom"] is not None]
@@ -285,7 +285,9 @@ def _build_cluster_stats(
 ) -> ClusterRentStats:
     rent_values = [entry["rent"] for entry in entries if entry["rent"] is not None]
     rent_per_sqft_values = [
-        entry["rent_per_sqft"] for entry in entries if entry["rent_per_sqft"] is not None
+        entry["rent_per_sqft"]
+        for entry in entries
+        if entry["rent_per_sqft"] is not None
     ]
     return ClusterRentStats(
         cluster_key=cluster_key,

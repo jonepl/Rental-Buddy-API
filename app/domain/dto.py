@@ -314,7 +314,7 @@ class PropertyInvestmentMetrics(BaseModel):
 
 
 class PropertyInvestmentScore(BaseModel):
-    overall_score: float       # 0–100
+    overall_score: float  # 0–100
     cashflow_score: float
     value_score: float
     risk_score: float
