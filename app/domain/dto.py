@@ -198,6 +198,57 @@ class EnvelopeSummary(BaseModel):
     page: PageSpec
 
 
+class OverallRentMetrics(BaseModel):
+    count: int
+    min_rent: Optional[float] = None
+    max_rent: Optional[float] = None
+    mean_rent: Optional[float] = None
+    median_rent: Optional[float] = None
+    p25_rent: Optional[float] = None
+    p75_rent: Optional[float] = None
+
+    min_rent_per_sqft: Optional[float] = None
+    max_rent_per_sqft: Optional[float] = None
+    mean_rent_per_sqft: Optional[float] = None
+    median_rent_per_sqft: Optional[float] = None
+    p25_rent_per_sqft: Optional[float] = None
+    p75_rent_per_sqft: Optional[float] = None
+
+    mean_days_on_market: Optional[float] = None
+    median_days_on_market: Optional[float] = None
+    fastest_days_on_market: Optional[int] = None
+    slowest_days_on_market: Optional[int] = None
+
+
+class DistanceMetrics(BaseModel):
+    median_distance_miles: Optional[float] = None
+    rent_distance_correlation: Optional[float] = None
+    distance_weighted_median_rent: Optional[float] = None
+
+
+class PropertyTypeStats(BaseModel):
+    property_type: str
+    count: int
+    median_rent: Optional[float] = None
+    median_rent_per_sqft: Optional[float] = None
+    median_sqft: Optional[float] = None
+    mean_days_on_market: Optional[float] = None
+
+
+class ClusterRentStats(BaseModel):
+    cluster_key: str
+    count: int
+    median_rent: Optional[float] = None
+    median_rent_per_sqft: Optional[float] = None
+
+
+class RegionalMetrics(BaseModel):
+    overall: OverallRentMetrics
+    distance: DistanceMetrics
+    property_type_metrics: List[PropertyTypeStats]
+    clusters_by_zip: List[ClusterRentStats]
+
+
 class EnvelopeMeta(BaseModel):
     category: Literal["rental", "sale"]
     request_id: str
@@ -225,6 +276,49 @@ class ErrorDetail(BaseModel):
 
 class ErrorEnvelope(BaseModel):
     error: ErrorDetail
+
+
+class PropertyInvestmentMetrics(BaseModel):
+    # Income
+    market_rent_monthly: Optional[float] = None
+    rent_low: Optional[float] = None
+    rent_high: Optional[float] = None
+    rent_per_sqft: Optional[float] = None
+    rent_per_bedroom: Optional[float] = None
+    rent_range_spread_pct: Optional[float] = None
+
+    # Price/value
+    purchase_price: Optional[float] = None
+    price_per_sqft: Optional[float] = None
+    rv_ratio_monthly: Optional[float] = None
+    gross_yield: Optional[float] = None
+    grm: Optional[float] = None
+    delta_vs_area_median_price_pct: Optional[float] = None
+
+    # Operations
+    noi_annual: Optional[float] = None
+    cap_rate: Optional[float] = None
+    expense_ratio: Optional[float] = None  # operating_expenses / EGI
+
+    # Standard financing scenario
+    loan_amount_std: Optional[float] = None
+    monthly_pi_std: Optional[float] = None
+    dscr_std: Optional[float] = None
+    monthly_cashflow_std: Optional[float] = None
+    cash_on_cash_std: Optional[float] = None
+
+    # Risk / quality indicators
+    rent_uncertainty_score: Optional[float] = None
+    comp_density_score: Optional[float] = None
+    price_dispersion_score: Optional[float] = None
+
+
+class PropertyInvestmentScore(BaseModel):
+    overall_score: float       # 0–100
+    cashflow_score: float
+    value_score: float
+    risk_score: float
+    metrics: PropertyInvestmentMetrics
 
 
 # COMPS

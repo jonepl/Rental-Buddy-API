@@ -43,7 +43,7 @@ def normalize_listing(
         last_seen=raw.get("lastSeenDate"),
     )
 
-    nid = raw.get("id") or raw.get("listing_id") or raw.get("mls_number") or "unknown"
+    nid = raw.get("id") or "unknown"
     normalized_id = f"prov:rentcast:{nid}"
 
     nl = NormalizedListing(
