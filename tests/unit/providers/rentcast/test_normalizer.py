@@ -41,7 +41,7 @@ def test_normalize_rentcast_listing_rental():
 
 def test_normalize_rentcast_listing_sale_fallbacks():
     raw = {
-        "listing_id": "456",
+        "id": "456",
         "addressLine1": "456 Elm",
         "addressLine2": "Unit 2",
         "city": "Austin",

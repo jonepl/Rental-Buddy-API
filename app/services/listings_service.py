@@ -6,10 +6,11 @@ from typing import List, Optional
 
 from app.core.config import settings
 from app.domain.dto import (CachedListings, ListingsRequest, NormalizedListing,
-                            SortSpec)
+                            RegionalMetrics, SortSpec)
 from app.domain.enums.context_request import OperationType
 from app.domain.ports.caching_port import CachePort
 from app.domain.ports.listings_port import ListingsPort
+from app.domain.regional_metrics import compute_regional_metrics
 from app.models.schemas import PropertyListing
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,12 @@ class ListingsService:
             logger.info("Listings cache SET (rentals): %s", cache_key)
 
         return listings
+
+    async def get_regional_metrics(self, request: ListingsRequest) -> RegionalMetrics:
+        rentals = await self.get_rental_data(request)
+        center_lat = request.latitude
+        center_lon = request.longitude
+        return compute_regional_metrics(rentals, center_lat, center_lon)
 
     async def get_mock_comps(
         self,

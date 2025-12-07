@@ -12,11 +12,17 @@ from app.services.listings_service import ListingsService, sort_listings
 
 
 def make_listing(
-    list_price: float, beds: int, baths: float, sqft: int, listing_id: str
+    list_price: float,
+    beds: int,
+    baths: float,
+    sqft: int,
+    listing_id: str,
+    *,
+    category: str = "sale",
 ) -> NormalizedListing:
     return NormalizedListing(
         id=listing_id,
-        category="sale",
+        category=category,
         status="Active",
         address=Address(formatted="123 Main"),
         facts=Facts(beds=beds, baths=baths, sqft=sqft),
@@ -147,3 +153,32 @@ async def test_get_mock_comps_uses_request_defaults(service: ListingsService):
 
     assert len(comps) == 3
     assert comps[0].address.startswith("123 Mock St")
+
+
+@pytest.mark.asyncio
+async def test_get_regional_metrics_returns_computed_values(
+    service: ListingsService, listings_port: ListingsPort
+):
+    rentals = [
+        make_listing(2000, 3, 2.0, 1000, "r1", category="rental"),
+        make_listing(1800, 2, 1.5, 900, "r2", category="rental"),
+    ]
+    rentals[0].dates.listed = "2024-01-01"
+    rentals[0].dates.last_seen = "2024-01-11"
+    rentals[1].dates.listed = "2024-01-05"
+    rentals[1].dates.last_seen = "2024-01-15"
+    rentals[0].address.lat = 30.0
+    rentals[0].address.lon = -97.0
+    rentals[1].address.lat = 30.1
+    rentals[1].address.lon = -97.1
+
+    listings_port.fetch_rentals.return_value = rentals
+    req = ListingsRequest(latitude=30.0, longitude=-97.0, radius_miles=5.0, limit=10)
+
+    metrics = await service.get_regional_metrics(req)
+
+    listings_port.fetch_rentals.assert_awaited_once_with(req)
+    assert metrics.overall.count == 2
+    assert metrics.overall.mean_rent == 1900
+    assert metrics.overall.median_rent == 1900
+    assert metrics.overall.fastest_days_on_market == 10
