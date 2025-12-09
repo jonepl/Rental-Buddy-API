@@ -4,7 +4,7 @@ from typing import Callable, List, Optional
 
 import pytest
 
-from app.domain.dto import ListingsRequest, NormalizedListing
+from app.domain.dto.listings import ListingsRequest, NormalizedListing
 from tests.integration.api.helpers import StubListingsService
 from tests.integration.api.helpers import make_listing as build_listing
 

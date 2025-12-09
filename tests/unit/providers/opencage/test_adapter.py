@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.domain.dto import Center, ListingsRequest
+from app.domain.dto.listings import Center, ListingsRequest
 from app.providers.opencage.adapter import OpenCageAdapter
 
 

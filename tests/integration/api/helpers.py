@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional
 
-from app.domain.dto import (HOA, Address, Dates, Facts, ListingsRequest,
-                            NormalizedListing, Pricing, ProviderInfo)
+from app.domain.dto.listings import (HOA, Address, Dates, Facts, ListingsRequest,
+                                     NormalizedListing, Pricing, ProviderInfo)
 
 
 def make_listing(

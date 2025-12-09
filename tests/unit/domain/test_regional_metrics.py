@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytest import approx
 
-from app.domain.dto import Address, Dates, Facts, NormalizedListing, Pricing
+from app.domain.dto.listings import Address, Dates, Facts, NormalizedListing, Pricing
 from app.domain.regional_metrics import compute_regional_metrics
 
 

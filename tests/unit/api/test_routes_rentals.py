@@ -25,14 +25,14 @@ if "redis" not in sys.modules:
 from fastapi.testclient import TestClient
 
 from app.api.deps import get_listings_service
-from app.domain.dto import (ClusterRentStats, DistanceMetrics,
-                            OverallRentMetrics, PropertyTypeStats,
-                            RegionalMetrics)
+from app.domain.dto.metrics import (ClusterRentStats, DistanceMetrics,
+                                    OverallRentMetrics, PropertyTypeStats,
+                                    RentalMarketMetrics)
 from app.main import app
 
 
 class DummyListingsService:
-    def __init__(self, response: RegionalMetrics):
+    def __init__(self, response: RentalMarketMetrics):
         self.response = response
         self.received_request = None
 
@@ -43,7 +43,7 @@ class DummyListingsService:
 
 def test_regional_metrics_endpoint_returns_metrics():
     client = TestClient(app)
-    metrics = RegionalMetrics(
+    metrics = RentalMarketMetrics(
         overall=OverallRentMetrics(count=0),
         distance=DistanceMetrics(),
         property_type_metrics=[

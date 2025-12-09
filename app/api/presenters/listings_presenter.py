@@ -4,9 +4,10 @@ from typing import List
 
 from app.core.pagination import paginate, slice_page
 from app.core.telemetry import duration_ms
-from app.domain.dto import (Center, EnvelopeMeta, EnvelopeSummary,
-                            InputFilters, ListingsRequest, ListingsResponse,
-                            NormalizedListing, PageSpec, SearchInputSummary)
+from app.domain.dto.listings import (Center, EnvelopeMeta, EnvelopeSummary,
+                                     InputFilters, ListingsRequest,
+                                     ListingsResponse, NormalizedListing,
+                                     PageSpec, SearchInputSummary)
 from app.domain.enums.context_request import OperationType
 
 

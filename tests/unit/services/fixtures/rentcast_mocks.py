@@ -1,4 +1,5 @@
-from app.domain.dto import ListingsRequest, Range
+from app.domain.dto.listings import ListingsRequest
+from app.domain.range_types import Range
 
 MOCK_RENTCAST_RESPONSE = [
     {
@@ -370,4 +371,256 @@ MOCK_RENTCAST_SALES_RESPONSE = [
             }
         },
     },
+]
+
+
+MOCK_RENTCAST_RENTAL_RESPONSE = [
+  {
+    "id": "2005-Arborside-Dr,-Austin,-TX-78754",
+    "formattedAddress": "2005 Arborside Dr, Austin, TX 78754",
+    "addressLine1": "2005 Arborside Dr",
+    "addressLine2": None,
+    "city": "Austin",
+    "state": "TX",
+    "stateFips": "48",
+    "zipCode": "78754",
+    "county": "Travis",
+    "countyFips": "453",
+    "latitude": 30.35837,
+    "longitude": -97.66508,
+    "propertyType": "Single Family",
+    "bedrooms": 3,
+    "bathrooms": 2.5,
+    "squareFootage": 1681,
+    "lotSize": 4360,
+    "yearBuilt": 2019,
+    "hoa": {
+      "fee": 45
+    },
+    "status": "Active",
+    "price": 2200,
+    "listingType": "Standard",
+    "listedDate": "2024-09-18T00:00:00.000Z",
+    "removedDate": None,
+    "createdDate": "2024-09-19T00:00:00.000Z",
+    "lastSeenDate": "2024-09-30T03:49:20.620Z",
+    "daysOnMarket": 13,
+    "mlsName": "CentralTexas",
+    "mlsNumber": "556965",
+    "listingAgent": {
+      "name": "Zachary Barton",
+      "phone": "5129948203",
+      "email": "zak-barton@realtytexas.com",
+      "website": "https://zak-barton.realtytexas.homes"
+    },
+    "listingOffice": {
+      "name": "Realty Texas",
+      "phone": "5124765348",
+      "email": "sales@realtytexas.com",
+      "website": "https://www.realtytexas.com"
+    },
+    "history": {
+      "2024-09-18": {
+        "event": "Rental Listing",
+        "price": 2200,
+        "listingType": "Standard",
+        "listedDate": "2024-09-18T00:00:00.000Z",
+        "removedDate": None,
+        "daysOnMarket": 13
+      }
+    }
+  },
+  {
+    "id": "2811-Rio-Grande-St,-Apt-204,-Austin,-TX-78705",
+    "formattedAddress": "2811 Rio Grande St, Apt 204, Austin, TX 78705",
+    "addressLine1": "2811 Rio Grande St",
+    "addressLine2": "Apt 204",
+    "city": "Austin",
+    "state": "TX",
+    "stateFips": "48",
+    "zipCode": "78705",
+    "county": "Travis",
+    "countyFips": "453",
+    "latitude": 30.294241,
+    "longitude": -97.743666,
+    "propertyType": "Condo",
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "squareFootage": 910,
+    "lotSize": 828,
+    "yearBuilt": 1983,
+    "status": "Active",
+    "price": 2150,
+    "listingType": "Standard",
+    "listedDate": "2024-09-30T00:00:00.000Z",
+    "removedDate": None,
+    "createdDate": "2023-11-21T00:00:00.000Z",
+    "lastSeenDate": "2024-09-30T04:57:39.029Z",
+    "daysOnMarket": 1,
+    "history": {
+      "2024-09-30": {
+        "event": "Rental Listing",
+        "price": 2150,
+        "listingType": "Standard",
+        "listedDate": "2024-09-30T00:00:00.000Z",
+        "removedDate": None,
+        "daysOnMarket": 1
+      }
+    }
+  },
+  {
+    "id": "1701-Simond-Ave,-Unit-438,-Austin,-TX-78723",
+    "formattedAddress": "1701 Simond Ave, Unit 438, Austin, TX 78723",
+    "addressLine1": "1701 Simond Ave",
+    "addressLine2": "Unit 438",
+    "city": "Austin",
+    "state": "TX",
+    "stateFips": "48",
+    "zipCode": "78723",
+    "county": "Travis",
+    "countyFips": "453",
+    "latitude": 30.298584,
+    "longitude": -97.706497,
+    "propertyType": "Condo",
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "squareFootage": 1101,
+    "yearBuilt": 2023,
+    "status": "Active",
+    "price": 3300,
+    "listingType": "Standard",
+    "listedDate": "2024-08-26T00:00:00.000Z",
+    "removedDate": None,
+    "createdDate": "2024-08-27T00:00:00.000Z",
+    "lastSeenDate": "2024-09-30T04:58:33.029Z",
+    "daysOnMarket": 36,
+    "mlsName": "UnlockMLS",
+    "mlsNumber": "7940788",
+    "listingAgent": {
+      "name": "Kristen Williams",
+      "phone": "5126992984",
+      "email": "kristen@williamskw.com",
+      "website": "https://www.williamskw.com"
+    },
+    "listingOffice": {
+      "name": "Keller Williams Realty",
+      "phone": "5124484111",
+      "email": "jdgrubb@kw.com",
+      "website": "https://www.kellerwilliams.com"
+    },
+    "history": {
+      "2024-08-26": {
+        "event": "Rental Listing",
+        "price": 3300,
+        "listingType": "Standard",
+        "listedDate": "2024-08-26T00:00:00.000Z",
+        "removedDate": None,
+        "daysOnMarket": 36
+      }
+    }
+  },
+  {
+    "id": "1190-Ridge-Dr,-Austin,-TX-78721",
+    "formattedAddress": "1190 Ridge Dr, Austin, TX 78721",
+    "addressLine1": "1190 Ridge Dr",
+    "addressLine2": None,
+    "city": "Austin",
+    "state": "TX",
+    "stateFips": "48",
+    "zipCode": "78721",
+    "county": "Travis",
+    "countyFips": "453",
+    "latitude": 30.276113,
+    "longitude": -97.698406,
+    "propertyType": "Manufactured",
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "squareFootage": 1200,
+    "lotSize": 5380,
+    "yearBuilt": 1999,
+    "status": "Active",
+    "price": 1850,
+    "listingType": "Standard",
+    "listedDate": "2024-05-02T00:00:00.000Z",
+    "removedDate": None,
+    "createdDate": "2023-06-24T00:00:00.000Z",
+    "lastSeenDate": "2024-09-30T05:47:38.669Z",
+    "daysOnMarket": 152,
+    "mlsName": "UnlockMLS",
+    "mlsNumber": "8112202",
+    "listingAgent": {
+      "name": "Brandee Otto",
+      "phone": "5125572728",
+      "email": "brandeelotto@gmail.com",
+      "website": "https://www.pp-bms.com"
+    },
+    "listingOffice": {
+      "name": "Realty One Group Prosper",
+      "phone": "5125235663",
+      "email": "karlyn@rogprosper.com",
+      "website": "https://www.marcyourmove.com"
+    },
+    "history": {
+      "2024-05-02": {
+        "event": "Rental Listing",
+        "price": 1850,
+        "listingType": "Standard",
+        "listedDate": "2024-05-02T00:00:00.000Z",
+        "removedDate": None,
+        "daysOnMarket": 152
+      }
+    }
+  },
+  {
+    "id": "411-W-Odell-St,-Unit-A,-Austin,-TX-78752",
+    "formattedAddress": "411 W Odell St, Unit A, Austin, TX 78752",
+    "addressLine1": "411 W Odell St",
+    "addressLine2": "Unit A",
+    "city": "Austin",
+    "state": "TX",
+    "stateFips": "48",
+    "zipCode": "78752",
+    "county": "Travis",
+    "countyFips": "453",
+    "latitude": 30.337767,
+    "longitude": -97.712625,
+    "propertyType": "Single Family",
+    "bedrooms": 3,
+    "bathrooms": 2.5,
+    "squareFootage": 1694,
+    "lotSize": 7013,
+    "yearBuilt": 2019,
+    "status": "Active",
+    "price": 2700,
+    "listingType": "Standard",
+    "listedDate": "2024-09-16T00:00:00.000Z",
+    "removedDate": None,
+    "createdDate": "2022-10-27T00:00:00.000Z",
+    "lastSeenDate": "2024-09-30T05:49:20.678Z",
+    "daysOnMarket": 15,
+    "mlsName": "UnlockMLS",
+    "mlsNumber": "4230179",
+    "listingAgent": {
+      "name": "Alex Mccormick",
+      "phone": "5127624397",
+      "email": "alex.mccormick@followupboss.me",
+      "website": "https://www.alexatxrealtor.com"
+    },
+    "listingOffice": {
+      "name": "Keller Williams Realty",
+      "phone": "5124484111",
+      "email": "jdgrubb@kw.com",
+      "website": "https://www.kellerwilliams.com"
+    },
+    "history": {
+      "2024-09-16": {
+        "event": "Rental Listing",
+        "price": 2700,
+        "listingType": "Standard",
+        "listedDate": "2024-09-16T00:00:00.000Z",
+        "removedDate": None,
+        "daysOnMarket": 15
+      }
+    }
+  }
 ]

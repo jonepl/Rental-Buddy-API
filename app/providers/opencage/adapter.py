@@ -1,4 +1,4 @@
-from app.domain.dto import Center, ListingsRequest
+from app.domain.dto.listings import Center, ListingsRequest
 from app.domain.ports.geocoding_port import GeocodingPort
 from app.providers.opencage.client import OpenCageClient
 from app.providers.opencage.mapper import build_params

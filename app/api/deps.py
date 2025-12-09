@@ -1,5 +1,5 @@
 from app.core.config import settings
-from app.domain.dto import CachedListings
+from app.domain.dto.listings import CachedListings
 from app.domain.ports.caching_port import CachePort
 from app.providers.redis.adapter import RedisModelCacheAdapter
 from app.providers.redis.client import get_redis_client

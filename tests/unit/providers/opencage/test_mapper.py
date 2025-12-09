@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.domain.dto import ListingsRequest
+from app.domain.dto.listings import ListingsRequest
 from app.providers.opencage.mapper import build_params
 
 

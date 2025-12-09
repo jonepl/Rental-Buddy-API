@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from app.domain.dto import Center, ListingsRequest
+from app.domain.dto.listings import Center, ListingsRequest
 
 
 @runtime_checkable

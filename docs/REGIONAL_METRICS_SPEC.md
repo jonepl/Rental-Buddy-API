@@ -46,10 +46,10 @@ zip = listing.address.zip
 days_on_market = derived from listing.dates
 ```
 
-## 3. Output DTO: RegionalMetrics
+## 3. Output DTO: RentalMarketMetrics
 
 ```
-class RegionalMetrics(BaseModel):
+class RentalMarketMetrics(BaseModel):
     overall: OverallRentMetrics
     distance: DistanceMetrics
     property_type_metrics: list[PropertyTypeStats]
@@ -147,7 +147,7 @@ def compute_regional_metrics(
     rentals: list[NormalizedListing],
     center_lat: float | None,
     center_lon: float | None,
-) -> RegionalMetrics:
+) -> RentalMarketMetrics:
     ...
 ```
 
@@ -161,7 +161,7 @@ The function:
 1. User searches for **sales listings**
 2. Backend performs **secondary rental search** using same search filters
 3. Rental results **cached for 12–24 hours**
-4. Engine computes `RegionalMetrics`
+4. Engine computes `RentalMarketMetrics`
 5. Metrics included in API response or used to compute rent estimates
 
 ## 8. Future Extensions

@@ -1,6 +1,6 @@
 # app/providers/rentcast/adapter.py
 from app.core.config import settings
-from app.domain.dto import ListingsRequest, NormalizedListing
+from app.domain.dto.listings import ListingsRequest, NormalizedListing
 from app.domain.enums.context_request import OperationType
 from app.domain.ports.listings_port import ListingsPort
 from app.providers.rentcast.client import RentCastClient

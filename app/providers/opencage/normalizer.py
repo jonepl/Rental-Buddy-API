@@ -1,4 +1,4 @@
-from app.domain.dto import Center
+from app.domain.dto.listings import Center
 from app.providers.opencage.models import GeocodeResponse
 
 

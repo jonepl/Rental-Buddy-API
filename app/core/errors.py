@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from app.domain.dto import ErrorDetail, ErrorEnvelope
+from app.domain.dto.errors import ErrorDetail, ErrorEnvelope
 
 
 def err(

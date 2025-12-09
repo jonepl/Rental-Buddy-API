@@ -1,7 +1,7 @@
 from typing import Dict
 from urllib.parse import quote
 
-from app.domain.dto import ListingsRequest  # adjust import as needed
+from app.domain.dto.listings import ListingsRequest  # adjust import as needed
 
 
 def build_params(req: ListingsRequest) -> Dict[str, str]:

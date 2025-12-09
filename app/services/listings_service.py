@@ -5,8 +5,9 @@ import logging
 from typing import List, Optional
 
 from app.core.config import settings
-from app.domain.dto import (CachedListings, ListingsRequest, NormalizedListing,
-                            RegionalMetrics, SortSpec)
+from app.domain.dto.listings import (CachedListings, ListingsRequest,
+                                     NormalizedListing, SortSpec)
+from app.domain.dto.metrics import RentalMarketMetrics
 from app.domain.enums.context_request import OperationType
 from app.domain.ports.caching_port import CachePort
 from app.domain.ports.listings_port import ListingsPort
@@ -75,7 +76,7 @@ class ListingsService:
 
         return listings
 
-    async def get_regional_metrics(self, request: ListingsRequest) -> RegionalMetrics:
+    async def get_regional_metrics(self, request: ListingsRequest) -> RentalMarketMetrics:
         rentals = await self.get_rental_data(request)
         center_lat = request.latitude
         center_lon = request.longitude

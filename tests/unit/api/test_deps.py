@@ -6,7 +6,7 @@ import pytest
 
 from app.api import deps
 from app.api.deps import get_listings_cache, get_listings_service
-from app.domain.dto import CachedListings
+from app.domain.dto.listings import CachedListings
 from app.providers.redis.adapter import RedisModelCacheAdapter
 from app.services.listings_service import ListingsService
 

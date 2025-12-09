@@ -9,7 +9,7 @@ from app.api.deps import get_listings_service
 from app.api.errors import handle_provider_error
 from app.api.presenters.listings_presenter import create_response
 from app.core.telemetry import request_id
-from app.domain.dto import ListingsRequest, ListingsResponse
+from app.domain.dto.listings import ListingsRequest, ListingsResponse
 from app.domain.enums.context_request import OperationType
 from app.services.listings_service import ListingsService
 

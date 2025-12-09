@@ -2,7 +2,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.domain.dto import ListingsRequest, Range
+from app.domain.dto.listings import ListingsRequest
+from app.domain.range_types import Range
 from app.domain.enums.context_request import OperationType
 from app.providers.rentcast.adapter import RentCastAdapter
 from app.providers.rentcast.client import RentCastClient

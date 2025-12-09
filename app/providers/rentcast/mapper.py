@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from app.core.config import settings
-from app.domain.dto import ListingsRequest
+from app.domain.dto.listings import ListingsRequest
 
 
 def build_params(request: ListingsRequest) -> dict:

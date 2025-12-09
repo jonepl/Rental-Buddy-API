@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from app.domain.dto import ListingsResponse
+from app.domain.dto.listings import ListingsResponse
 
 
 @dataclass

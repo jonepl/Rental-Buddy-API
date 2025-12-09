@@ -5,8 +5,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.domain.dto import (Address, CachedListings, Facts, ListingsRequest,
-                            NormalizedListing, Pricing, SortSpec)
+from app.domain.dto.listings import (Address, CachedListings, Facts,
+                                     ListingsRequest, NormalizedListing,
+                                     Pricing, SortSpec)
 from app.domain.ports.listings_port import ListingsPort
 from app.services.listings_service import ListingsService, sort_listings
 

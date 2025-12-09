@@ -9,7 +9,8 @@ from app.api.deps import get_listings_service
 from app.api.errors import handle_provider_error
 from app.api.presenters.listings_presenter import create_response
 from app.core.telemetry import request_id
-from app.domain.dto import ListingsRequest, ListingsResponse, RegionalMetrics
+from app.domain.dto.listings import ListingsRequest, ListingsResponse
+from app.domain.dto.metrics import RentalMarketMetrics
 from app.domain.enums.context_request import OperationType
 from app.services.listings_service import ListingsService
 
@@ -35,11 +36,11 @@ async def rentals(
     return create_response(listings, req, OperationType.RENTALS, rid, start)
 
 
-@router.post("/rentals/regional-metrics", response_model=RegionalMetrics)
+@router.post("/rentals/regional-metrics", response_model=RentalMarketMetrics)
 async def rentals_regional_metrics(
     req: ListingsRequest,
     listings_service: ListingsService = Depends(get_listings_service),
-) -> RegionalMetrics:
+) -> RentalMarketMetrics:
     rid = request_id()
     start = time.perf_counter()
 

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.domain.dto import Center, ListingsRequest
+from app.domain.dto.listings import Center, ListingsRequest
 from app.domain.ports.geocoding_port import GeocodingPort
 from app.services.geocoding_service import GeocodingService
 

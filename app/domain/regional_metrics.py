@@ -6,9 +6,10 @@ from datetime import datetime
 from statistics import mean, median
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from app.domain.dto import (ClusterRentStats, DistanceMetrics,
-                            NormalizedListing, OverallRentMetrics,
-                            PropertyTypeStats, RegionalMetrics)
+from app.domain.dto.listings import NormalizedListing
+from app.domain.dto.metrics import (ClusterRentStats, DistanceMetrics,
+                                    OverallRentMetrics, PropertyTypeStats,
+                                    RentalMarketMetrics)
 from app.utils.distance import haversine_distance
 
 
@@ -16,7 +17,7 @@ def compute_regional_metrics(
     rentals: List[NormalizedListing],
     center_lat: Optional[float],
     center_lon: Optional[float],
-) -> RegionalMetrics:
+) -> RentalMarketMetrics:
     rents: List[float] = []
     rent_per_sqft_values: List[float] = []
     days_on_market_values: List[int] = []
@@ -98,7 +99,7 @@ def compute_regional_metrics(
         for cluster_key, entries in sorted(zip_groups.items())
     ]
 
-    return RegionalMetrics(
+    return RentalMarketMetrics(
         overall=overall_metrics,
         distance=distance_metrics,
         property_type_metrics=property_type_metrics,

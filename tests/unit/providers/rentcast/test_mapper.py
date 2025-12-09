@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.domain.dto import ListingsRequest
+from app.domain.dto.listings import ListingsRequest
 from app.domain.range_types import Range
 from app.providers.rentcast.mapper import build_params
 
