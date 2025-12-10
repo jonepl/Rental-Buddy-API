@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Literal, Optional, TYPE_CHECKING
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.range_types import Range
-
-if TYPE_CHECKING:  # pragma: no cover
-    from app.domain.dto.metrics import RentalMarketMetrics, SalesMarketMetrics
+from app.domain.dto.metrics import RentalMarketMetrics, SalesMarketMetrics
 
 
 class SortBy(str, Enum):
@@ -211,11 +209,11 @@ class ListingsResponse(BaseModel):
 
 
 class RentalListingsResponse(ListingsResponse):
-    rental_metrics: "RentalMarketMetrics | None" = None
+    rental_metrics: Optional[RentalMarketMetrics] = None
 
 
 class SalesListingsResponse(ListingsResponse):
-    sales_metrics: "SalesMarketMetrics | None" = None
+    sales_metrics: Optional[SalesMarketMetrics] = None
 
 
 class CachedListings(BaseModel):

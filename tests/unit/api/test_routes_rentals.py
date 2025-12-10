@@ -25,6 +25,8 @@ if "redis" not in sys.modules:
 from fastapi.testclient import TestClient
 
 from app.api.deps import get_listings_service
+from app.domain.dto.listings import (Address, Dates, Facts, NormalizedListing,
+                                     Pricing)
 from app.domain.dto.metrics import (ClusterRentStats, DistanceMetrics,
                                     OverallRentMetrics, PropertyTypeStats,
                                     RentalMarketMetrics)
@@ -39,6 +41,16 @@ class DummyListingsService:
     async def get_regional_metrics(self, request):
         self.received_request = request
         return self.response
+
+
+class StubListingsService:
+    def __init__(self, rentals):
+        self.rentals = rentals
+        self.last_request = None
+
+    async def get_rental_data(self, request):
+        self.last_request = request
+        return self.rentals
 
 
 def test_regional_metrics_endpoint_returns_metrics():
@@ -70,5 +82,40 @@ def test_regional_metrics_endpoint_returns_metrics():
         assert resp.status_code == 200
         assert resp.json() == metrics.model_dump()
         assert dummy_service.received_request.address == "123 Main St"
+    finally:
+        app.dependency_overrides.pop(get_listings_service, None)
+
+
+def _listing(listing_id: str, price: float, lat: float, lon: float) -> NormalizedListing:
+    return NormalizedListing(
+        id=listing_id,
+        category="rental",
+        address=Address(zip="12345", lat=lat, lon=lon),
+        facts=Facts(property_type="single_family", sqft=1000),
+        pricing=Pricing(list_price=price),
+        dates=Dates(listed="2024-01-01", last_seen="2024-01-10"),
+    )
+
+
+def test_rentals_endpoint_includes_metrics():
+    client = TestClient(app)
+    rentals = [_listing("r1", 2000, 30.0, -97.0)]
+    stub = StubListingsService(rentals)
+
+    async def override_service():
+        return stub
+
+    app.dependency_overrides[get_listings_service] = override_service
+    try:
+        resp = client.post(
+            "/api/v1/rentals",
+            json={"latitude": 30.0, "longitude": -97.0, "radius_miles": 5.0},
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["meta"]["category"] == "rental"
+        assert data["rental_metrics"]["overall"]["count"] == 1
+        assert data["listings"], "listings should be included"
     finally:
         app.dependency_overrides.pop(get_listings_service, None)
