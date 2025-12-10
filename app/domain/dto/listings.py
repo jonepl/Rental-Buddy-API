@@ -160,16 +160,21 @@ class Pricing(BaseModel):
     list_price: Optional[float] = None
     currency: str = "USD"
     period: Optional[Literal["monthly", "total"]] = None
+    price_per_sqft: Optional[float] = None
 
 
 class Dates(BaseModel):
     listed: Optional[str] = None
     removed: Optional[str] = None
     last_seen: Optional[str] = None
+    days_on_market: Optional[int] = None
+    is_fresh: Optional[bool] = None
+    is_stale: Optional[bool] = None
 
 
 class HOA(BaseModel):
     monthly: Optional[float] = None
+    has_hoa: Optional[bool] = None
 
 
 class NormalizedListing(BaseModel):

@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.domain.dto.listings import (Address, CachedListings, Facts,
-                                     ListingsRequest, NormalizedListing,
+from app.domain.dto.listings import (Address, CachedListings, Dates, Facts,
+                                     HOA, ListingsRequest, NormalizedListing,
                                      Pricing, SortSpec)
 from app.domain.ports.listings_port import ListingsPort
 from app.services.listings_service import ListingsService, sort_listings
@@ -20,14 +20,22 @@ def make_listing(
     listing_id: str,
     *,
     category: str = "sale",
+    lat: float | None = None,
+    lon: float | None = None,
+    listed: str | None = None,
+    last_seen: str | None = None,
+    removed: str | None = None,
+    hoa: float | None = None,
 ) -> NormalizedListing:
     return NormalizedListing(
         id=listing_id,
         category=category,
         status="Active",
-        address=Address(formatted="123 Main"),
+        address=Address(formatted="123 Main", lat=lat, lon=lon),
         facts=Facts(beds=beds, baths=baths, sqft=sqft),
         pricing=Pricing(list_price=list_price),
+        dates=Dates(listed=listed, last_seen=last_seen, removed=removed),
+        hoa=HOA(monthly=hoa) if hoa is not None else HOA(),
     )
 
 
@@ -125,6 +133,36 @@ async def test_get_rental_data_returns_cached_items(
     assert result == cached_listings
     listings_port.fetch_rentals.assert_not_awaited()
     cache_port.set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_get_sale_data_enriches_listing_fields(
+    service: ListingsService, listings_port: ListingsPort
+):
+    listing = make_listing(
+        200000,
+        3,
+        2.0,
+        1000,
+        "enrich",
+        lat=30.05,
+        lon=-97.05,
+        listed="2024-01-01",
+        last_seen="2024-01-11",
+        hoa=125.0,
+    )
+    listings_port.fetch_sales.return_value = [listing]
+    req = ListingsRequest(latitude=30.0, longitude=-97.0, radius_miles=5.0, limit=10)
+
+    result = await service.get_sale_data(req)
+
+    enriched = result[0]
+    assert enriched.pricing.price_per_sqft == 200.0
+    assert enriched.dates.days_on_market == 10
+    assert enriched.dates.is_fresh is True
+    assert enriched.dates.is_stale is False
+    assert enriched.hoa.has_hoa is True
+    assert enriched.distance_miles is not None
 
 
 def test_sort_listings_handles_missing_sort_key():

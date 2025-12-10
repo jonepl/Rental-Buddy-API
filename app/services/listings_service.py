@@ -9,6 +9,7 @@ from app.domain.dto.listings import (CachedListings, ListingsRequest,
                                      NormalizedListing, SortSpec)
 from app.domain.dto.metrics import RentalMarketMetrics
 from app.domain.enums.context_request import OperationType
+from app.domain.listing_enrichment import enrich_listings
 from app.domain.ports.caching_port import CachePort
 from app.domain.ports.listings_port import ListingsPort
 from app.domain.regional_metrics import compute_regional_metrics
@@ -43,6 +44,7 @@ class ListingsService:
 
         listings = await self.listings_port.fetch_sales(request)
         listings = sort_listings(listings, request.sort)
+        enrich_listings(listings, request.latitude, request.longitude)
 
         if self.cache:
             await self.cache.set(cache_key, CachedListings(items=listings))
@@ -69,6 +71,7 @@ class ListingsService:
 
         listings = await self.listings_port.fetch_rentals(request)
         listings = sort_listings(listings, request.sort)
+        enrich_listings(listings, request.latitude, request.longitude)
 
         if self.cache:
             await self.cache.set(cache_key, CachedListings(items=listings))
